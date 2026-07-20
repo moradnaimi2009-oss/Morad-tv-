@@ -4,8 +4,10 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.ActivityInfo
 import android.net.Uri
+import android.view.View
 import android.webkit.WebChromeClient
 import android.webkit.WebView
+import android.widget.FrameLayout
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -142,17 +144,54 @@ private fun YoutubePlayer(videoId: String) {
     AndroidView(
         modifier = Modifier.fillMaxSize(),
         factory = { ctx ->
-            WebView(ctx).apply {
+            val container = FrameLayout(ctx)
+
+            lateinit var webView: WebView
+            webView = WebView(ctx).apply {
+                setLayerType(View.LAYER_TYPE_HARDWARE, null)
+
                 settings.javaScriptEnabled = true
                 settings.mediaPlaybackRequiresUserGesture = false
                 settings.domStorageEnabled = true
-                webChromeClient = WebChromeClient()
+                settings.loadWithOverviewMode = true
+                settings.useWideViewPort = true
+
+                webChromeClient = object : WebChromeClient() {
+                    private var customView: View? = null
+                    private var customViewCallback: CustomViewCallback? = null
+
+                    override fun onShowCustomView(view: View?, callback: CustomViewCallback?) {
+                        if (customView != null) {
+                            callback?.onCustomViewHidden()
+                            return
+                        }
+                        customView = view
+                        customViewCallback = callback
+                        container.addView(
+                            view,
+                            FrameLayout.LayoutParams(
+                                FrameLayout.LayoutParams.MATCH_PARENT,
+                                FrameLayout.LayoutParams.MATCH_PARENT
+                            )
+                        )
+                        webView.visibility = View.GONE
+                    }
+
+                    override fun onHideCustomView() {
+                        customView?.let { container.removeView(it) }
+                        customView = null
+                        webView.visibility = View.VISIBLE
+                        customViewCallback?.onCustomViewHidden()
+                        customViewCallback = null
+                    }
+                }
+
                 val html = """
                     <html><body style="margin:0;padding:0;background:#000;">
                     <iframe width="100%" height="100%"
-                        src="https://www.youtube.com/embed/$videoId?autoplay=1&playsinline=1&fs=1&modestbranding=1"
+                        src="https://www.youtube.com/embed/$videoId?autoplay=1&playsinline=0&fs=1&modestbranding=1&rel=0"
                         frameborder="0"
-                        allow="autoplay; encrypted-media; picture-in-picture"
+                        allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
                         allowfullscreen></iframe>
                     </body></html>
                 """.trimIndent()
@@ -164,6 +203,15 @@ private fun YoutubePlayer(videoId: String) {
                     null
                 )
             }
+
+            container.addView(
+                webView,
+                FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
+                )
+            )
+            container
         }
     )
 }
