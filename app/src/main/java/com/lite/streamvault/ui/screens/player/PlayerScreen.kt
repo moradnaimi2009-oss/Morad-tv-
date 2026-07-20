@@ -1,8 +1,11 @@
 package com.lite.streamvault.ui.screens.player
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.ActivityInfo
 import android.net.Uri
+import android.webkit.WebChromeClient
+import android.webkit.WebView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -31,6 +34,13 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import com.lite.streamvault.ui.theme.StatusError
 
+private val YOUTUBE_ID_REGEX = Regex(
+    "(?:youtu\\.be/|youtube\\.com/(?:watch\\?v=|live/|embed/|shorts/))([a-zA-Z0-9_-]{6,})"
+)
+
+private fun extractYoutubeId(url: String): String? =
+    YOUTUBE_ID_REGEX.find(url)?.groupValues?.get(1)
+
 @Composable
 fun PlayerScreen(
     videoUrl: String,
@@ -40,19 +50,11 @@ fun PlayerScreen(
 ) {
     val context = LocalContext.current
     val activity = context as? Activity
-
-    val exoPlayer = remember {
-        ExoPlayer.Builder(context).build().apply {
-            setMediaItem(MediaItem.fromUri(Uri.parse(videoUrl)))
-            playWhenReady = true
-            prepare()
-        }
-    }
+    val youtubeId = remember(videoUrl) { extractYoutubeId(videoUrl) }
 
     DisposableEffect(Unit) {
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
         onDispose {
-            exoPlayer.release()
             activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
     }
@@ -62,15 +64,12 @@ fun PlayerScreen(
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        AndroidView(
-            modifier = Modifier.fillMaxSize(),
-            factory = { ctx ->
-                PlayerView(ctx).apply {
-                    player = exoPlayer
-                    useController = true
-                }
-            }
-        )
+        if (youtubeId != null) {
+            YoutubePlayer(videoId = youtubeId)
+        } else {
+            ExoStreamPlayer(videoUrl = videoUrl)
+        }
+
         Row(
             modifier = Modifier
                 .align(Alignment.TopStart)
@@ -109,4 +108,62 @@ fun PlayerScreen(
             }
         }
     }
+}
+
+@Composable
+private fun ExoStreamPlayer(videoUrl: String) {
+    val context = LocalContext.current
+    val exoPlayer = remember {
+        ExoPlayer.Builder(context).build().apply {
+            setMediaItem(MediaItem.fromUri(Uri.parse(videoUrl)))
+            playWhenReady = true
+            prepare()
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose { exoPlayer.release() }
+    }
+
+    AndroidView(
+        modifier = Modifier.fillMaxSize(),
+        factory = { ctx ->
+            PlayerView(ctx).apply {
+                player = exoPlayer
+                useController = true
+            }
+        }
+    )
+}
+
+@SuppressLint("SetJavaScriptEnabled")
+@Composable
+private fun YoutubePlayer(videoId: String) {
+    AndroidView(
+        modifier = Modifier.fillMaxSize(),
+        factory = { ctx ->
+            WebView(ctx).apply {
+                settings.javaScriptEnabled = true
+                settings.mediaPlaybackRequiresUserGesture = false
+                settings.domStorageEnabled = true
+                webChromeClient = WebChromeClient()
+                val html = """
+                    <html><body style="margin:0;padding:0;background:#000;">
+                    <iframe width="100%" height="100%"
+                        src="https://www.youtube.com/embed/$videoId?autoplay=1&playsinline=1&fs=1&modestbranding=1"
+                        frameborder="0"
+                        allow="autoplay; encrypted-media; picture-in-picture"
+                        allowfullscreen></iframe>
+                    </body></html>
+                """.trimIndent()
+                loadDataWithBaseURL(
+                    "https://www.youtube.com",
+                    html,
+                    "text/html",
+                    "utf-8",
+                    null
+                )
+            }
+        }
+    )
 }
