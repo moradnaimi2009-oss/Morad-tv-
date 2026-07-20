@@ -23,14 +23,14 @@ class UnityPlatform(private val config: AdConfig) : AdPlatform {
     override fun loadInterstitial() {
         UnityAds.load(interstitialId, object : IUnityAdsLoadListener {
             override fun onUnityAdsAdLoaded(p0: String?) { ready = true }
-            override fun onUnityAdsFailedToLoad(p0: String?, p1: Int) { ready = false }
+            override fun onUnityAdsFailedToLoad(p0: String?, p1: UnityAds.UnityAdsLoadError?, p2: String?) { ready = false }
         })
     }
 
     override fun showInterstitial(activity: Activity, onClosed: () -> Unit) {
         if (!ready) { onClosed(); return }
         UnityAds.show(activity, interstitialId, object : IUnityAdsShowListener {
-            override fun onUnityAdsShowFailure(p0: String?, p1: Int, p2: String?) { onClosed() }
+            override fun onUnityAdsShowFailure(p0: String?, p1: UnityAds.UnityAdsShowError?, p2: String?) { onClosed() }
             override fun onUnityAdsShowStart(p0: String?) {}
             override fun onUnityAdsShowClick(p0: String?) {}
             override fun onUnityAdsShowComplete(p0: String?, p1: UnityAds.UnityAdsShowCompletionState?) {
