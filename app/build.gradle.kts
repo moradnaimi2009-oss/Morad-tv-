@@ -110,6 +110,5 @@ dependencies {
 
     implementation(libs.admob)
     implementation(libs.applovin)
-    implementation(libs.startapp)
     implementation(libs.unity)
 }
