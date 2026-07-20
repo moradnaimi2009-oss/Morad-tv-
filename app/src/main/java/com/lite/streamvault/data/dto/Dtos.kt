@@ -2,6 +2,20 @@ package com.lite.streamvault.data.dto
 
 import com.google.gson.annotations.SerializedName
 
+data class ApiListEnvelope<T>(
+    @SerializedName("ok") val ok: Boolean? = null,
+    @SerializedName("data") val data: ApiItems<T>? = null
+)
+
+data class ApiItems<T>(
+    @SerializedName("items") val items: List<T>? = null
+)
+
+data class ApiObjectEnvelope<T>(
+    @SerializedName("ok") val ok: Boolean? = null,
+    @SerializedName("data") val data: T? = null
+)
+
 data class SettingsDto(
     @SerializedName("appName") val appName: String? = null,
     @SerializedName("appVersion") val appVersion: String? = null,
@@ -33,7 +47,7 @@ data class ChannelDto(
     @SerializedName("id") val id: Int? = null,
     @SerializedName("name") val name: String? = null,
     @SerializedName("streamUrl") val streamUrl: String? = null,
-    @SerializedName("logoUrl") val logoUrl: String? = null,
+    @SerializedName(value = "logoUrl", alternate = ["logo"]) val logoUrl: String? = null,
     @SerializedName("categoryId") val categoryId: Int? = null,
     @SerializedName("categoryName") val categoryName: String? = null,
     @SerializedName("country") val country: String? = null,

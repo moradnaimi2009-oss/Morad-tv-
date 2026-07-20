@@ -33,39 +33,42 @@ class StreamVaultRepositoryImpl @Inject constructor(
         const val TAG = "StreamVaultRepo"
     }
 
+    private fun <T> unwrapList(envelope: com.lite.streamvault.data.dto.ApiListEnvelope<T>): List<T> =
+        envelope.data?.items.orEmpty()
+
     override suspend fun getSettings(): AppSettings = safeCall(
         default = AppSettings(),
-        block = { api.getSettings().toDomain() }
+        block = { api.getSettings().data?.toDomain() ?: AppSettings() }
     )
 
     override suspend fun getCategories(type: String?): List<Category> = safeCall(
         default = emptyList(),
-        block = { api.getCategories(type).map { it.toDomain() } }
+        block = { unwrapList(api.getCategories(type)).map { it.toDomain() } }
     )
 
     override suspend fun getChannels(): List<Channel> = safeCall(
         default = emptyList(),
-        block = { api.getChannels().map { it.toDomain() } }
+        block = { unwrapList(api.getChannels()).map { it.toDomain() } }
     )
 
     override suspend fun getMovies(): List<Movie> = safeCall(
         default = emptyList(),
-        block = { api.getMovies().map { it.toDomain() } }
+        block = { unwrapList(api.getMovies()).map { it.toDomain() } }
     )
 
     override suspend fun getAnime(): List<Anime> = safeCall(
         default = emptyList(),
-        block = { api.getAnime().map { it.toDomain() } }
+        block = { unwrapList(api.getAnime()).map { it.toDomain() } }
     )
 
     override suspend fun getEpisodes(animeId: Int): List<AnimeEpisode> = safeCall(
         default = emptyList(),
-        block = { api.getEpisodes(animeId).map { it.toDomain() } }
+        block = { unwrapList(api.getEpisodes(animeId)).map { it.toDomain() } }
     )
 
     override suspend fun getAds(): List<AdCampaign> = safeCall(
         default = emptyList(),
-        block = { api.getAds().map { it.toDomain() } }
+        block = { unwrapList(api.getAds()).map { it.toDomain() } }
     )
 
     private inline fun <T> safeCall(default: T, block: () -> T): T = try {
