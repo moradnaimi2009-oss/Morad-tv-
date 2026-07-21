@@ -131,19 +131,9 @@ private fun AppRoot(
                     activity.startActivity(webIntent)
                 }
             } else {
-                // Offer a chooser of every installed video player app (Hero TV, VLC,
-                // MX Player, etc.). If the user cancels or none is installed, fall back
-                // to the built-in ExoPlayer screen so playback still works either way.
-                try {
-                    val viewIntent = Intent(Intent.ACTION_VIEW).apply {
-                        setDataAndType(Uri.parse(videoUrl), "video/*")
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                    val chooser = Intent.createChooser(viewIntent, title)
-                    activity.startActivity(chooser)
-                } catch (e: ActivityNotFoundException) {
-                    navController.navigate(Routes.player(videoUrl, title, isLive))
-                }
+                // Real HLS/direct stream URLs play natively and reliably in the built-in
+                // ExoPlayer screen — no external app chooser needed.
+                navController.navigate(Routes.player(videoUrl, title, isLive))
             }
         }
     }
