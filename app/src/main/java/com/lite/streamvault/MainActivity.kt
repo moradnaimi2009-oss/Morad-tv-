@@ -1,6 +1,9 @@
 package com.lite.streamvault
 
 import android.Manifest
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -103,9 +106,45 @@ private fun AppRoot(
         Routes.HOME, Routes.CHANNELS, Routes.MOVIES, Routes.ANIME
     )
 
+    val youtubeIdRegex = remember {
+        Regex("(?:youtu\\.be/|youtube\\.com/(?:watch\\?v=|live/|embed/|shorts/))([a-zA-Z0-9_-]{6,})")
+    }
+
     fun playWithInterstitial(videoUrl: String, title: String, isLive: Boolean) {
+        val youtubeId = youtubeIdRegex.find(videoUrl)?.groupValues?.get(1)
         adManager.showInterstitial(activity) {
-            navController.navigate(Routes.player(videoUrl, title, isLive))
+            if (youtubeId != null) {
+                // Open the official YouTube app (or browser fallback) instead of an in-app
+                // WebView. This avoids embedding restrictions/origin errors entirely, since
+                // it's genuinely the YouTube app playing the video, not a third-party embed.
+                try {
+                    val appIntent = Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse("vnd.youtube:$youtubeId")
+                    ).apply { setPackage("com.google.android.youtube") }
+                    activity.startActivity(appIntent)
+                } catch (e: ActivityNotFoundException) {
+                    val webIntent = Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse("https://www.youtube.com/watch?v=$youtubeId")
+                    )
+                    activity.startActivity(webIntent)
+                }
+            } else {
+                // Offer a chooser of every installed video player app (Hero TV, VLC,
+                // MX Player, etc.). If the user cancels or none is installed, fall back
+                // to the built-in ExoPlayer screen so playback still works either way.
+                try {
+                    val viewIntent = Intent(Intent.ACTION_VIEW).apply {
+                        setDataAndType(Uri.parse(videoUrl), "video/*")
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    val chooser = Intent.createChooser(viewIntent, title)
+                    activity.startActivity(chooser)
+                } catch (e: ActivityNotFoundException) {
+                    navController.navigate(Routes.player(videoUrl, title, isLive))
+                }
+            }
         }
     }
 
