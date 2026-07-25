@@ -32,7 +32,8 @@ object NetworkModule {
         return OkHttpClient.Builder()
             .addInterceptor { chain ->
                 val req = chain.request().newBuilder()
-                    .header("User-Agent", Constants.USER_AGENT)
+                    .header("apikey", Constants.SUPABASE_ANON_KEY)
+                    .header("Authorization", "Bearer ${Constants.SUPABASE_ANON_KEY}")
                     .header("Accept", "application/json")
                     .build()
                 chain.proceed(req)
@@ -48,7 +49,7 @@ object NetworkModule {
     @Singleton
     fun provideRetrofit(client: OkHttpClient, gson: Gson): Retrofit =
         Retrofit.Builder()
-            .baseUrl(Constants.BASE_URL + Constants.API_PATH)
+            .baseUrl(Constants.SUPABASE_URL + Constants.REST_BASE)
             .client(client)
             .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
@@ -59,6 +60,5 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideRepository(api: StreamVaultApi): StreamVaultRepository =
-        StreamVaultRepositoryImpl(api)
+    fun provideRepository(api: StreamVaultApi): StreamVaultRepository = StreamVaultRepositoryImpl(api)
 }
