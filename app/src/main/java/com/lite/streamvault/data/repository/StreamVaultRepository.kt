@@ -2,6 +2,7 @@ package com.lite.streamvault.data.repository
 
 import android.util.Log
 import com.google.gson.JsonSyntaxException
+import com.lite.streamvault.data.remote.ContentMapper.toAppSettings
 import com.lite.streamvault.data.remote.ContentMapper.toDomain
 import com.lite.streamvault.data.remote.StreamVaultApi
 import com.lite.streamvault.domain.model.AdCampaign
@@ -29,52 +30,45 @@ class StreamVaultRepositoryImpl @Inject constructor(
     private val api: StreamVaultApi
 ) : StreamVaultRepository {
 
-    private companion object {
-        const val TAG = "StreamVaultRepo"
-    }
-
-    private fun <T> unwrapList(envelope: com.lite.streamvault.data.dto.ApiListEnvelope<T>): List<T> =
-        envelope.data?.items.orEmpty()
+    private companion object { const val TAG = "StreamVaultRepo" }
 
     override suspend fun getSettings(): AppSettings = safeCall(
         default = AppSettings(),
-        block = { api.getSettings().data?.toDomain() ?: AppSettings() }
+        block = { api.getSettings().toAppSettings() }
     )
 
     override suspend fun getCategories(type: String?): List<Category> = safeCall(
         default = emptyList(),
-        block = { unwrapList(api.getCategories(type)).map { it.toDomain() } }
+        block = { api.getCategories().filter { type == null || it.type == type }.map { it.toDomain() } }
     )
 
     override suspend fun getChannels(): List<Channel> = safeCall(
         default = emptyList(),
-        block = { unwrapList(api.getChannels()).map { it.toDomain() } }
+        block = { api.getChannels().map { it.toDomain() } }
     )
 
     override suspend fun getMovies(): List<Movie> = safeCall(
         default = emptyList(),
-        block = { unwrapList(api.getMovies()).map { it.toDomain() } }
+        block = { api.getMovies().map { it.toDomain() } }
     )
 
     override suspend fun getAnime(): List<Anime> = safeCall(
         default = emptyList(),
-        block = { unwrapList(api.getAnime()).map { it.toDomain() } }
+        block = { api.getAnime().map { it.toDomain() } }
     )
 
     override suspend fun getEpisodes(animeId: Int): List<AnimeEpisode> = safeCall(
         default = emptyList(),
-        block = { unwrapList(api.getEpisodes(animeId)).map { it.toDomain() } }
+        block = { api.getEpisodes("eq.$animeId").map { it.toDomain() } }
     )
 
-    override suspend fun getAds(): List<AdCampaign> = safeCall(
-        default = emptyList(),
-        block = { unwrapList(api.getAds()).map { it.toDomain() } }
-    )
+    // الإعلانات مو مربوطة بعد بالجدول الجديد — راجع لاحقًا
+    override suspend fun getAds(): List<AdCampaign> = emptyList()
 
     private inline fun <T> safeCall(default: T, block: () -> T): T = try {
         block()
     } catch (e: JsonSyntaxException) {
-        Log.e(TAG, "JSON parse error (server returned HTML?)", e)
+        Log.e(TAG, "JSON parse error", e)
         default
     } catch (e: Exception) {
         Log.e(TAG, "API call failed", e)

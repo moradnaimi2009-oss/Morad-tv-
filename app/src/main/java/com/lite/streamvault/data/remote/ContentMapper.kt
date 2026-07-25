@@ -1,13 +1,11 @@
 package com.lite.streamvault.data.remote
 
-import com.lite.streamvault.data.dto.AdCampaignDto
 import com.lite.streamvault.data.dto.AnimeDto
 import com.lite.streamvault.data.dto.AnimeEpisodeDto
 import com.lite.streamvault.data.dto.CategoryDto
 import com.lite.streamvault.data.dto.ChannelDto
 import com.lite.streamvault.data.dto.MovieDto
-import com.lite.streamvault.data.dto.SettingsDto
-import com.lite.streamvault.domain.model.AdCampaign
+import com.lite.streamvault.data.dto.SettingRowDto
 import com.lite.streamvault.domain.model.Anime
 import com.lite.streamvault.domain.model.AnimeEpisode
 import com.lite.streamvault.domain.model.AppSettings
@@ -25,84 +23,77 @@ object ContentMapper {
         return "$base/${path.trimStart('/')}"
     }
 
-    fun SettingsDto.toDomain(): AppSettings = AppSettings(
-        appName = appName ?: "Morad TV",
-        appVersion = appVersion ?: "1.0.0",
-        appDescription = appDescription ?: "",
-        maintenanceMode = maintenanceMode ?: false,
-        maintenanceMessage = maintenanceMessage ?: "",
-        forceUpdate = forceUpdate ?: false,
-        showAds = showAds ?: true,
-        enableChannels = enableChannels ?: true,
-        enableMovies = enableMovies ?: true,
-        enableAnime = enableAnime ?: true,
-        updateEnabled = updateEnabled ?: false,
-        updateVersion = updateVersion ?: "",
-        updateUrl = updateUrl ?: "",
-        updateMessage = updateMessage ?: "",
-        supportEmail = supportEmail ?: "",
-        privacyUrl = privacyUrl ?: "",
-        termsOfService = termsOfService ?: ""
-    )
+    fun List<SettingRowDto>.toAppSettings(): AppSettings {
+        val map = this.associate { it.key to (it.value ?: "") }
+        return AppSettings(
+            appName = map["app_name"] ?: "Morad TV",
+            appVersion = map["app_version"] ?: "1.0.0",
+            appDescription = map["app_description"] ?: "",
+            maintenanceMode = map["maintenance_mode"] == "true",
+            maintenanceMessage = map["maintenance_message"] ?: "",
+            forceUpdate = map["force_update"] == "true",
+            showAds = map["show_ads"] != "false",
+            enableChannels = map["enable_channels"] != "false",
+            enableMovies = map["enable_movies"] != "false",
+            enableAnime = map["enable_anime"] != "false",
+            updateEnabled = map["update_enabled"] == "true",
+            updateVersion = map["update_version"] ?: "",
+            updateUrl = map["update_url"] ?: "",
+            updateMessage = map["update_message"] ?: "",
+            supportEmail = map["support_email"] ?: "",
+            privacyUrl = map["privacy_url"] ?: "",
+            termsOfService = map["terms_of_service"] ?: ""
+        )
+    }
 
     fun CategoryDto.toDomain(): Category = Category(
-        id = id ?: 0,
+        id = id.toInt(),
         name = name ?: "",
         type = type ?: "",
-        imageUrl = getFullUrl(imageUrl)
+        imageUrl = getFullUrl(icon)
     )
 
     fun ChannelDto.toDomain(): Channel = Channel(
-        id = id ?: 0,
+        id = id.toInt(),
         name = name ?: "",
         streamUrl = streamUrl ?: "",
-        logoUrl = getFullUrl(logoUrl),
-        categoryId = categoryId,
-        categoryName = categoryName,
+        logoUrl = getFullUrl(logo),
+        categoryId = categoryId?.toInt(),
+        categoryName = "",
         country = country,
         language = language,
-        isActive = isActive ?: true
+        isActive = isActive
     )
 
     fun MovieDto.toDomain(): Movie = Movie(
-        id = id ?: 0,
+        id = id.toInt(),
         title = title ?: "",
         description = description ?: "",
-        posterUrl = getFullUrl(posterUrl),
-        streamUrl = streamUrl ?: "",
-        releaseYear = releaseYear ?: "",
-        categoryId = categoryId,
-        categoryName = categoryName,
-        duration = duration ?: ""
+        posterUrl = getFullUrl(poster),
+        streamUrl = videoUrl ?: "",
+        releaseYear = year?.toString() ?: "",
+        categoryId = categoryId?.toInt(),
+        categoryName = "",
+        duration = duration?.toString() ?: ""
     )
 
     fun AnimeDto.toDomain(): Anime = Anime(
-        id = id ?: 0,
+        id = id.toInt(),
         title = title ?: "",
         description = description ?: "",
-        posterUrl = getFullUrl(posterUrl),
-        releaseYear = releaseYear ?: "",
-        categoryId = categoryId,
-        categoryName = categoryName,
-        episodeCount = episodeCount ?: (episodes?.size ?: 0)
+        posterUrl = getFullUrl(poster),
+        releaseYear = "",
+        categoryId = categoryId?.toInt(),
+        categoryName = "",
+        episodeCount = 0
     )
 
     fun AnimeEpisodeDto.toDomain(): AnimeEpisode = AnimeEpisode(
-        id = id ?: 0,
-        animeId = animeId ?: animeIdSnake ?: 0,
-        episodeNumber = episodeNumber ?: episodeNumberSnake ?: 0,
-        title = title,
-        streamUrl = streamUrl ?: streamUrlSnake ?: "",
-        duration = duration ?: ""
-    )
-
-    fun AdCampaignDto.toDomain(): AdCampaign = AdCampaign(
-        id = id ?: 0,
-        network = network ?: "",
-        isActive = isActive ?: false,
-        bannerId = bannerId,
-        interstitialId = interstitialId,
-        appId = appId,
-        priority = priority ?: 0
+        id = id.toInt(),
+        animeId = (animeId ?: cartoonId ?: 0).toInt(),
+        episodeNumber = episodeNumber,
+        title = title ?: "",
+        streamUrl = videoUrl ?: "",
+        duration = ""
     )
 }
