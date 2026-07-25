@@ -2,101 +2,73 @@ package com.lite.streamvault.data.dto
 
 import com.google.gson.annotations.SerializedName
 
-data class ApiListEnvelope<T>(
-    @SerializedName("ok") val ok: Boolean? = null,
-    @SerializedName("data") val data: ApiItems<T>? = null
-)
-
-data class ApiItems<T>(
-    @SerializedName("items") val items: List<T>? = null
-)
-
-data class ApiObjectEnvelope<T>(
-    @SerializedName("ok") val ok: Boolean? = null,
-    @SerializedName("data") val data: T? = null
-)
-
-data class SettingsDto(
-    @SerializedName("appName") val appName: String? = null,
-    @SerializedName("appVersion") val appVersion: String? = null,
-    @SerializedName("appDescription") val appDescription: String? = null,
-    @SerializedName("maintenanceMode") val maintenanceMode: Boolean? = null,
-    @SerializedName("maintenanceMessage") val maintenanceMessage: String? = null,
-    @SerializedName("forceUpdate") val forceUpdate: Boolean? = null,
-    @SerializedName("showAds") val showAds: Boolean? = null,
-    @SerializedName("enableChannels") val enableChannels: Boolean? = null,
-    @SerializedName("enableMovies") val enableMovies: Boolean? = null,
-    @SerializedName("enableAnime") val enableAnime: Boolean? = null,
-    @SerializedName("updateEnabled") val updateEnabled: Boolean? = null,
-    @SerializedName("updateVersion") val updateVersion: String? = null,
-    @SerializedName("updateUrl") val updateUrl: String? = null,
-    @SerializedName("updateMessage") val updateMessage: String? = null,
-    @SerializedName("supportEmail") val supportEmail: String? = null,
-    @SerializedName("privacyUrl") val privacyUrl: String? = null,
-    @SerializedName("termsOfService") val termsOfService: String? = null
-)
-
-data class CategoryDto(
-    @SerializedName("id") val id: Int? = null,
-    @SerializedName("name") val name: String? = null,
-    @SerializedName("type") val type: String? = null,
-    @SerializedName("imageUrl") val imageUrl: String? = null
-)
-
 data class ChannelDto(
-    @SerializedName("id") val id: Int? = null,
+    @SerializedName("id") val id: Long = 0,
     @SerializedName("name") val name: String? = null,
-    @SerializedName("streamUrl") val streamUrl: String? = null,
-    @SerializedName(value = "logoUrl", alternate = ["logo"]) val logoUrl: String? = null,
-    @SerializedName("categoryId") val categoryId: Int? = null,
-    @SerializedName("categoryName") val categoryName: String? = null,
+    @SerializedName("category_id") val categoryId: Long? = null,
+    @SerializedName("logo") val logo: String? = null,
+    @SerializedName("stream_url") val streamUrl: String? = null,
     @SerializedName("country") val country: String? = null,
     @SerializedName("language") val language: String? = null,
-    @SerializedName("isActive") val isActive: Boolean? = null
+    @SerializedName("description") val description: String? = null,
+    @SerializedName("is_active") val isActive: Boolean = true,
+    @SerializedName("views") val views: Int = 0
 )
 
 data class MovieDto(
-    @SerializedName("id") val id: Int? = null,
+    @SerializedName("id") val id: Long = 0,
     @SerializedName("title") val title: String? = null,
+    @SerializedName("category_id") val categoryId: Long? = null,
+    @SerializedName("poster") val poster: String? = null,
     @SerializedName("description") val description: String? = null,
-    @SerializedName("posterUrl") val posterUrl: String? = null,
-    @SerializedName("streamUrl") val streamUrl: String? = null,
-    @SerializedName("releaseYear") val releaseYear: String? = null,
-    @SerializedName("categoryId") val categoryId: Int? = null,
-    @SerializedName("categoryName") val categoryName: String? = null,
-    @SerializedName("duration") val duration: String? = null
+    @SerializedName("year") val year: Int? = null,
+    @SerializedName("duration") val duration: Int? = null,
+    @SerializedName("video_url") val videoUrl: String? = null,
+    @SerializedName("is_active") val isActive: Boolean = true,
+    @SerializedName("views") val views: Int = 0
 )
 
 data class AnimeDto(
-    @SerializedName("id") val id: Int? = null,
+    @SerializedName("id") val id: Long = 0,
     @SerializedName("title") val title: String? = null,
+    @SerializedName("category_id") val categoryId: Long? = null,
+    @SerializedName("poster") val poster: String? = null,
     @SerializedName("description") val description: String? = null,
-    @SerializedName("posterUrl") val posterUrl: String? = null,
-    @SerializedName("releaseYear") val releaseYear: String? = null,
-    @SerializedName("categoryId") val categoryId: Int? = null,
-    @SerializedName("categoryName") val categoryName: String? = null,
-    @SerializedName("episodeCount") val episodeCount: Int? = null,
-    @SerializedName("episodes") val episodes: List<AnimeEpisodeDto>? = null
+    @SerializedName("trailer_url") val trailerUrl: String? = null,
+    @SerializedName("is_active") val isActive: Boolean = true,
+    @SerializedName("views") val views: Int = 0
+)
+
+data class CartoonDto(
+    @SerializedName("id") val id: Long = 0,
+    @SerializedName("title") val title: String? = null,
+    @SerializedName("category_id") val categoryId: Long? = null,
+    @SerializedName("poster") val poster: String? = null,
+    @SerializedName("description") val description: String? = null,
+    @SerializedName("trailer_url") val trailerUrl: String? = null,
+    @SerializedName("is_active") val isActive: Boolean = true,
+    @SerializedName("views") val views: Int = 0
 )
 
 data class AnimeEpisodeDto(
-    @SerializedName("id") val id: Int? = null,
-    @SerializedName("animeId") val animeId: Int? = null,
-    @SerializedName("anime_id") val animeIdSnake: Int? = null,
-    @SerializedName("episodeNumber") val episodeNumber: Int? = null,
-    @SerializedName("episode_number") val episodeNumberSnake: Int? = null,
+    @SerializedName("id") val id: Long = 0,
+    @SerializedName("anime_id") val animeId: Long? = null,
+    @SerializedName("cartoon_id") val cartoonId: Long? = null,
+    @SerializedName("episode_number") val episodeNumber: Int = 0,
+    @SerializedName("season") val season: Int = 1,
     @SerializedName("title") val title: String? = null,
-    @SerializedName("streamUrl") val streamUrl: String? = null,
-    @SerializedName("stream_url") val streamUrlSnake: String? = null,
-    @SerializedName("duration") val duration: String? = null
+    @SerializedName("video_url") val videoUrl: String? = null
 )
 
-data class AdCampaignDto(
-    @SerializedName("id") val id: Int? = null,
-    @SerializedName("network") val network: String? = null,
-    @SerializedName("isActive") val isActive: Boolean? = null,
-    @SerializedName("bannerId") val bannerId: String? = null,
-    @SerializedName("interstitialId") val interstitialId: String? = null,
-    @SerializedName("appId") val appId: String? = null,
-    @SerializedName("priority") val priority: Int? = null
+data class CategoryDto(
+    @SerializedName("id") val id: Long = 0,
+    @SerializedName("name") val name: String? = null,
+    @SerializedName("slug") val slug: String? = null,
+    @SerializedName("type") val type: String? = null,
+    @SerializedName("icon") val icon: String? = null
+)
+
+data class SettingRowDto(
+    @SerializedName("key") val key: String,
+    @SerializedName("value") val value: String?
 )
