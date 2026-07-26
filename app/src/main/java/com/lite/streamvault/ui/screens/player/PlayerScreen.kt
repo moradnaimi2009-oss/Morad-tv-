@@ -4,9 +4,10 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.ActivityInfo
 import android.net.Uri
+import android.view.View
 import android.webkit.WebChromeClient
 import android.webkit.WebView
-import android.webkit.WebViewClient
+import android.widget.FrameLayout
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -30,6 +31,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
@@ -55,8 +59,23 @@ fun PlayerScreen(
 
     DisposableEffect(Unit) {
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+
+        val window = activity?.window
+        if (window != null) {
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+            val controller = WindowInsetsControllerCompat(window, window.decorView)
+            controller.hide(WindowInsetsCompat.Type.systemBars())
+            controller.systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+
         onDispose {
             activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            if (window != null) {
+                WindowCompat.setDecorFitsSystemWindows(window, true)
+                WindowInsetsControllerCompat(window, window.decorView)
+                    .show(WindowInsetsCompat.Type.systemBars())
+            }
         }
     }
 
@@ -143,17 +162,61 @@ private fun YoutubePlayer(videoId: String) {
     AndroidView(
         modifier = Modifier.fillMaxSize(),
         factory = { ctx ->
-            WebView(ctx).apply {
+            val container = FrameLayout(ctx)
+
+            lateinit var webView: WebView
+            webView = WebView(ctx).apply {
+                setLayerType(View.LAYER_TYPE_HARDWARE, null)
+
                 settings.javaScriptEnabled = true
                 settings.mediaPlaybackRequiresUserGesture = false
                 settings.domStorageEnabled = true
-                webViewClient = WebViewClient()
-                webChromeClient = WebChromeClient()
-                loadUrl(
-                    "https://www.youtube.com/embed/$videoId" +
-                        "?autoplay=1&playsinline=1&fs=1&modestbranding=1&rel=0&enablejsapi=1"
+                settings.loadWithOverviewMode = true
+                settings.useWideViewPort = true
+
+                webChromeClient = object : WebChromeClient() {
+                    private var customView: View? = null
+                    private var customViewCallback: CustomViewCallback? = null
+
+                    override fun onShowCustomView(view: View?, callback: CustomViewCallback?) {
+                        if (customView != null) {
+                            callback?.onCustomViewHidden()
+                            return
+                        }
+                        customView = view
+                        customViewCallback = callback
+                        container.addView(
+                            view,
+                            FrameLayout.LayoutParams(
+                                FrameLayout.LayoutParams.MATCH_PARENT,
+                                FrameLayout.LayoutParams.MATCH_PARENT
+                            )
+                        )
+                        webView.visibility = View.GONE
+                    }
+
+                    override fun onHideCustomView() {
+                        customView?.let { container.removeView(it) }
+                        customView = null
+                        webView.visibility = View.VISIBLE
+                        customViewCallback?.onCustomViewHidden()
+                        customViewCallback = null
+                    }
+                }
+
+                webView.loadUrl(
+                    "https://www.youtube.com/embed/$videoId?autoplay=1&playsinline=1&fs=1&modestbranding=1&rel=0"
                 )
             }
+
+            container.addView(
+                webView,
+                FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
+                )
+            )
+            container
         }
     )
 }
