@@ -19,8 +19,15 @@ object ContentMapper {
     fun getFullUrl(path: String?): String? {
         if (path.isNullOrBlank()) return null
         if (path.startsWith("http://") || path.startsWith("https://")) return path
-        val base = Constants.BASE_URL.trimEnd('/')
-        return "$base/${path.trimStart('/')}"
+        val base = Constants.SUPABASE_URL.trimEnd('/')
+        val cleanPath = path.trimStart('/')
+        // Supabase Storage public objects live under storage/v1/object/public/<bucket>/<path>.
+        // If the stored value already includes that prefix, don't add it twice.
+        return if (cleanPath.startsWith("storage/v1/object/public/")) {
+            "$base/$cleanPath"
+        } else {
+            "$base/storage/v1/object/public/$cleanPath"
+        }
     }
 
     fun List<SettingRowDto>.toAppSettings(): AppSettings {

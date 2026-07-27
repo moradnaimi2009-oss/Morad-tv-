@@ -1,6 +1,8 @@
 package com.lite.streamvault.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -79,7 +81,10 @@ fun NavGraph(
             arguments = listOf(navArgument("movieId") { type = NavType.IntType })
         ) { entry ->
             val id = entry.arguments?.getInt("movieId") ?: 0
-            val movie = Movie(id = id, title = "", streamUrl = "")
+            val viewModel: com.lite.streamvault.viewmodel.MovieDetailViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+            val detailState by viewModel.state.collectAsState()
+            androidx.compose.runtime.LaunchedEffect(id) { viewModel.load(id) }
+            val movie = detailState.movie ?: Movie(id = id, title = "", streamUrl = "")
             MovieDetailScreen(
                 movie = movie,
                 onBack = { navController.popBackStack() },
@@ -92,10 +97,13 @@ fun NavGraph(
             arguments = listOf(navArgument("animeId") { type = NavType.IntType })
         ) { entry ->
             val id = entry.arguments?.getInt("animeId") ?: 0
-            val anime = Anime(id = id, title = "")
+            val viewModel: com.lite.streamvault.viewmodel.AnimeDetailViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+            val detailState by viewModel.state.collectAsState()
+            androidx.compose.runtime.LaunchedEffect(id) { viewModel.load(id) }
+            val anime = detailState.anime ?: Anime(id = id, title = "")
             AnimeDetailScreen(
                 anime = anime,
-                episodes = emptyList(),
+                episodes = detailState.episodes,
                 onBack = { navController.popBackStack() },
                 onEpisodeClick = { ep, title -> onPlayWithInterstitial(ep.streamUrl, title, false) }
             )
