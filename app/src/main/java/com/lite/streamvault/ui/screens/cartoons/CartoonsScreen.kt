@@ -1,20 +1,24 @@
 package com.lite.streamvault.ui.screens.cartoons
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChildCare
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,22 +28,23 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.lite.streamvault.domain.model.Anime
 import com.lite.streamvault.ui.components.ShimmerBox
-import com.lite.streamvault.ui.components.ShimmerPosterCard
-import com.lite.streamvault.ui.screens.home.PosterCard
+import com.lite.streamvault.ui.components.ShimmerLine
 import com.lite.streamvault.ui.theme.Blue500
 import com.lite.streamvault.ui.theme.Blue700
 import com.lite.streamvault.viewmodel.CartoonsViewModel
 
-// Mirrors AnimeScreen.kt exactly (same UI pattern), sourced from CartoonsViewModel instead.
+// 3-per-row grid, same clear style as ChannelsScreen — replaces the old hero+row layout.
 @Composable
 fun CartoonsScreen(
     onCartoonClick: (Anime) -> Unit,
@@ -48,138 +53,111 @@ fun CartoonsScreen(
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.load() }
 
-    LazyColumn(
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(3),
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
-        contentPadding = PaddingValues(vertical = 8.dp)
+        contentPadding = PaddingValues(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         if (state.isLoading) {
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                        .aspectRatio(16f / 9f)
-                        .clip(RoundedCornerShape(20.dp))
-                ) { ShimmerBox(Modifier.fillMaxSize()) }
-            }
-            items(3) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    repeat(3) { Box(Modifier.width(140.dp)) { ShimmerPosterCard() } }
-                }
-            }
+            items(9) { CartoonTileShimmer() }
         } else {
-            val chunks = state.anime.chunked(7)
-            chunks.forEach { chunk ->
-                val hero = chunk.first()
-                val grid = chunk.drop(1)
-                item {
-                    HeroCartoon(hero) { onCartoonClick(hero) }
-                }
-                item {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        grid.forEach { cartoon ->
-                            Box(modifier = Modifier.weight(1f)) {
-                                PosterCard(
-                                    title = cartoon.title,
-                                    subtitle = cartoon.categoryName ?: "",
-                                    posterUrl = cartoon.posterUrl,
-                                    episodeBadge = cartoon.episodeCount.takeIf { it > 0 }
-                                        ?.let { "$it EP" },
-                                    onClick = { onCartoonClick(cartoon) }
-                                )
-                            }
-                        }
-                        repeat(3 - grid.size) { Spacer(Modifier.weight(1f)) }
-                    }
-                }
+            items(state.anime) { cartoon ->
+                CartoonTile(cartoon) { onCartoonClick(cartoon) }
             }
         }
     }
 }
 
 @Composable
-private fun HeroCartoon(cartoon: Anime, onClick: () -> Unit) {
-    Box(
+private fun CartoonTile(cartoon: Anime, onClick: () -> Unit) {
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
-            .aspectRatio(16f / 9f)
-            .clip(RoundedCornerShape(20.dp))
+            .clickable(onClick = onClick)
     ) {
-        if (!cartoon.posterUrl.isNullOrBlank()) {
-            AsyncImage(
-                model = cartoon.posterUrl,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
-        } else {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        androidx.compose.ui.graphics.Brush.linearGradient(
-                            colors = listOf(Blue700.copy(alpha = 0.3f), Blue500.copy(alpha = 0.1f))
-                        )
-                    )
-            )
-        }
         Box(
             modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    androidx.compose.ui.graphics.Brush.verticalGradient(
-                        colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.85f))
-                    )
-                )
-        )
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(16.dp)
+                .fillMaxWidth()
+                .aspectRatio(2f / 3f)
+                .clip(RoundedCornerShape(14.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
         ) {
-            Text(
-                text = cartoon.title,
-                color = Color.White,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
+            if (!cartoon.posterUrl.isNullOrBlank()) {
+                AsyncImage(
+                    model = cartoon.posterUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.linearGradient(
+                                colors = listOf(Blue700.copy(alpha = 0.3f), Blue500.copy(alpha = 0.1f))
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.ChildCare,
+                        contentDescription = null,
+                        tint = Blue500,
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
+            }
             if (cartoon.episodeCount > 0) {
-                Text(
-                    text = "${cartoon.episodeCount} Episodes",
-                    color = Blue500,
-                    style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(6.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(Blue500.copy(alpha = 0.9f))
+                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                ) {
+                    Text(
+                        text = "${cartoon.episodeCount} EP",
+                        color = Color.White,
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
             }
         }
-        if (cartoon.episodeCount > 0) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(8.dp)
-                    .clip(RoundedCornerShape(50))
-                    .background(Blue500.copy(alpha = 0.9f))
-                    .padding(horizontal = 10.dp, vertical = 4.dp)
-            ) {
-                Text(
-                    text = "${cartoon.episodeCount} Episodes",
-                    color = Color.White,
-                    style = MaterialTheme.typography.labelSmall
-                )
-            }
-        }
+        Text(
+            text = cartoon.title,
+            color = Color.White,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 6.dp)
+        )
+    }
+}
+
+@Composable
+private fun CartoonTileShimmer() {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        ShimmerBox(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(2f / 3f)
+                .clip(RoundedCornerShape(14.dp))
+        )
+        ShimmerLine(
+            modifier = Modifier
+                .fillMaxWidth(0.6f)
+                .padding(top = 8.dp)
+                .height(10.dp)
+        )
     }
 }

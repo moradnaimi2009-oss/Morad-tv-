@@ -1,6 +1,7 @@
 package com.lite.streamvault.ui.screens.anime
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -114,6 +115,7 @@ private fun HeroAnime(anime: Anime, onClick: () -> Unit) {
             .padding(16.dp)
             .aspectRatio(16f / 9f)
             .clip(RoundedCornerShape(20.dp))
+            .clickable(onClick = onClick)
     ) {
         if (!anime.posterUrl.isNullOrBlank()) {
             AsyncImage(

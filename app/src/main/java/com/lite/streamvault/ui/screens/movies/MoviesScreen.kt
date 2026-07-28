@@ -1,6 +1,7 @@
 package com.lite.streamvault.ui.screens.movies
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -117,6 +118,7 @@ private fun HeroMovie(movie: Movie, onClick: () -> Unit) {
             .padding(16.dp)
             .aspectRatio(16f / 9f)
             .clip(RoundedCornerShape(20.dp))
+            .clickable(onClick = onClick)
     ) {
         if (!movie.posterUrl.isNullOrBlank()) {
             AsyncImage(
