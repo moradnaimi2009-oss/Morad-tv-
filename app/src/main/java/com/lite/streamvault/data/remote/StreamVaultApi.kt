@@ -26,6 +26,9 @@ interface StreamVaultApi {
     @GET("episodes?select=*")
     suspend fun getEpisodes(@Query("anime_id") animeIdFilter: String? = null): List<AnimeEpisodeDto>
 
+    @GET("episodes?select=*")
+    suspend fun getCartoonEpisodes(@Query("cartoon_id") cartoonIdFilter: String): List<AnimeEpisodeDto>
+
     @GET("categories?select=*")
     suspend fun getCategories(): List<CategoryDto>
 

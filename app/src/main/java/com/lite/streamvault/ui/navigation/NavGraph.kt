@@ -1,18 +1,25 @@
 package com.lite.streamvault.ui.navigation
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.lite.streamvault.domain.model.Anime
 import com.lite.streamvault.domain.model.AppSettings
 import com.lite.streamvault.domain.model.Channel
-import com.lite.streamvault.domain.model.Movie
+import com.lite.streamvault.ui.components.ShimmerBox
 import com.lite.streamvault.ui.screens.anime.AnimeScreen
+import com.lite.streamvault.ui.screens.cartoons.CartoonsScreen
 import com.lite.streamvault.ui.screens.channels.ChannelsScreen
 import com.lite.streamvault.ui.screens.detail.AnimeDetailScreen
 import com.lite.streamvault.ui.screens.detail.MovieDetailScreen
@@ -21,6 +28,9 @@ import com.lite.streamvault.ui.screens.movies.MoviesScreen
 import com.lite.streamvault.ui.screens.player.PlayerScreen
 import com.lite.streamvault.ui.screens.search.SearchScreen
 import com.lite.streamvault.ui.screens.splash.SplashScreen
+import com.lite.streamvault.viewmodel.AnimeDetailViewModel
+import com.lite.streamvault.viewmodel.CartoonDetailViewModel
+import com.lite.streamvault.viewmodel.MovieDetailViewModel
 import java.net.URLDecoder
 
 @Composable
@@ -67,6 +77,12 @@ fun NavGraph(
             })
         }
 
+        composable(Routes.CARTOONS) {
+            CartoonsScreen(onCartoonClick = { cartoon ->
+                navController.navigate(Routes.cartoonDetail(cartoon.id))
+            })
+        }
+
         composable(Routes.SEARCH) {
             SearchScreen(
                 onBack = { navController.popBackStack() },
@@ -81,15 +97,19 @@ fun NavGraph(
             arguments = listOf(navArgument("movieId") { type = NavType.IntType })
         ) { entry ->
             val id = entry.arguments?.getInt("movieId") ?: 0
-            val viewModel: com.lite.streamvault.viewmodel.MovieDetailViewModel = androidx.hilt.navigation.compose.hiltViewModel()
-            val detailState by viewModel.state.collectAsState()
-            androidx.compose.runtime.LaunchedEffect(id) { viewModel.load(id) }
-            val movie = detailState.movie ?: Movie(id = id, title = "", streamUrl = "")
-            MovieDetailScreen(
-                movie = movie,
-                onBack = { navController.popBackStack() },
-                onPlay = { m -> onPlayWithInterstitial(m.streamUrl, m.title, false) }
-            )
+            val viewModel: MovieDetailViewModel = hiltViewModel()
+            LaunchedEffect(id) { viewModel.load(id) }
+            val state by viewModel.state.collectAsState()
+            val movie = state.movie
+
+            when {
+                movie != null -> MovieDetailScreen(
+                    movie = movie,
+                    onBack = { navController.popBackStack() },
+                    onPlay = { m -> onPlayWithInterstitial(m.streamUrl, m.title, false) }
+                )
+                else -> DetailLoadingPlaceholder()
+            }
         }
 
         composable(
@@ -97,16 +117,41 @@ fun NavGraph(
             arguments = listOf(navArgument("animeId") { type = NavType.IntType })
         ) { entry ->
             val id = entry.arguments?.getInt("animeId") ?: 0
-            val viewModel: com.lite.streamvault.viewmodel.AnimeDetailViewModel = androidx.hilt.navigation.compose.hiltViewModel()
-            val detailState by viewModel.state.collectAsState()
-            androidx.compose.runtime.LaunchedEffect(id) { viewModel.load(id) }
-            val anime = detailState.anime ?: Anime(id = id, title = "")
-            AnimeDetailScreen(
-                anime = anime,
-                episodes = detailState.episodes,
-                onBack = { navController.popBackStack() },
-                onEpisodeClick = { ep, title -> onPlayWithInterstitial(ep.streamUrl, title, false) }
-            )
+            val viewModel: AnimeDetailViewModel = hiltViewModel()
+            LaunchedEffect(id) { viewModel.load(id) }
+            val state by viewModel.state.collectAsState()
+            val anime = state.anime
+
+            when {
+                anime != null -> AnimeDetailScreen(
+                    anime = anime,
+                    episodes = state.episodes,
+                    onBack = { navController.popBackStack() },
+                    onEpisodeClick = { ep, title -> onPlayWithInterstitial(ep.streamUrl, title, false) }
+                )
+                else -> DetailLoadingPlaceholder()
+            }
+        }
+
+        composable(
+            route = Routes.CARTOON_DETAIL,
+            arguments = listOf(navArgument("cartoonId") { type = NavType.IntType })
+        ) { entry ->
+            val id = entry.arguments?.getInt("cartoonId") ?: 0
+            val viewModel: CartoonDetailViewModel = hiltViewModel()
+            LaunchedEffect(id) { viewModel.load(id) }
+            val state by viewModel.state.collectAsState()
+            val cartoon = state.anime
+
+            when {
+                cartoon != null -> AnimeDetailScreen(
+                    anime = cartoon,
+                    episodes = state.episodes,
+                    onBack = { navController.popBackStack() },
+                    onEpisodeClick = { ep, title -> onPlayWithInterstitial(ep.streamUrl, title, false) }
+                )
+                else -> DetailLoadingPlaceholder()
+            }
         }
 
         composable(
@@ -127,5 +172,18 @@ fun NavGraph(
                 onBack = { navController.popBackStack() }
             )
         }
+    }
+}
+
+@Composable
+private fun DetailLoadingPlaceholder() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        ShimmerBox(
+            modifier = Modifier.fillMaxSize()
+        )
     }
 }

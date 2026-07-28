@@ -3,12 +3,10 @@ package com.lite.streamvault.ui.screens.player
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.ActivityInfo
-import android.graphics.Bitmap
 import android.net.Uri
 import android.view.View
 import android.webkit.WebChromeClient
 import android.webkit.WebView
-import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -40,8 +38,10 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.common.MediaItem
-import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
@@ -64,10 +64,6 @@ fun PlayerScreen(
     val context = LocalContext.current
     val activity = context as? Activity
     val youtubeId = remember(videoUrl) { extractYoutubeId(videoUrl) }
-    // Starts true so a spinner is visible immediately when the screen opens,
-    // instead of a plain black screen while the stream/page is still loading.
-    var isLoading by remember { mutableStateOf(true) }
-    var loadError by remember { mutableStateOf<String?>(null) }
 
     DisposableEffect(Unit) {
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
@@ -97,32 +93,9 @@ fun PlayerScreen(
             .background(Color.Black)
     ) {
         if (youtubeId != null) {
-            YoutubePlayer(
-                videoId = youtubeId,
-                onLoadingChange = { isLoading = it }
-            )
+            YoutubePlayer(videoId = youtubeId)
         } else {
-            ExoStreamPlayer(
-                videoUrl = videoUrl,
-                onLoadingChange = { isLoading = it },
-                onError = { loadError = it }
-            )
-        }
-
-        if (isLoading && loadError == null) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Color.White)
-            }
-        }
-
-        if (loadError != null) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(
-                    text = loadError ?: "Playback error",
-                    color = Color.White,
-                    modifier = Modifier.padding(24.dp)
-                )
-            }
+            ExoStreamPlayer(videoUrl = videoUrl)
         }
 
         Row(
@@ -166,48 +139,103 @@ fun PlayerScreen(
 }
 
 @Composable
-private fun ExoStreamPlayer(
-    videoUrl: String,
-    onLoadingChange: (Boolean) -> Unit,
-    onError: (String) -> Unit
-) {
+private fun ExoStreamPlayer(videoUrl: String) {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // Starts true so the spinner is visible immediately, before the first player callback fires.
+    var isBuffering by remember { mutableStateOf(true) }
+
     val exoPlayer = remember {
         ExoPlayer.Builder(context).build().apply {
-            addListener(object : Player.Listener {
-                override fun onPlaybackStateChanged(playbackState: Int) {
-                    onLoadingChange(playbackState == Player.STATE_BUFFERING)
-                }
-
-                override fun onPlayerError(error: PlaybackException) {
-                    onLoadingChange(false)
-                    onError("Could not play this stream. Please check the link.")
-                }
-            })
             setMediaItem(MediaItem.fromUri(Uri.parse(videoUrl)))
             playWhenReady = true
             prepare()
         }
     }
 
+    // Drive the spinner from real player state: show it while buffering, hide it once frames
+    // are actually playing (covers the "slow internet with no feedback" complaint).
+    DisposableEffect(exoPlayer) {
+        val listener = object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                isBuffering = playbackState == Player.STATE_BUFFERING
+            }
+
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                if (isPlaying) isBuffering = false
+            }
+        }
+        exoPlayer.addListener(listener)
+        onDispose { exoPlayer.removeListener(listener) }
+    }
+
+    // Pause playback (picture AND sound) as soon as the app is backgrounded, and resume it when
+    // the user comes back — otherwise ExoPlayer keeps decoding/playing audio behind the app.
+    DisposableEffect(lifecycleOwner, exoPlayer) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP -> {
+                    exoPlayer.playWhenReady = false
+                }
+                Lifecycle.Event.ON_RESUME -> {
+                    exoPlayer.playWhenReady = true
+                }
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     DisposableEffect(Unit) {
         onDispose { exoPlayer.release() }
     }
 
-    AndroidView(
-        modifier = Modifier.fillMaxSize(),
-        factory = { ctx ->
-            PlayerView(ctx).apply {
-                player = exoPlayer
-                useController = true
+    Box(modifier = Modifier.fillMaxSize()) {
+        AndroidView(
+            modifier = Modifier.fillMaxSize(),
+            factory = { ctx ->
+                PlayerView(ctx).apply {
+                    player = exoPlayer
+                    useController = true
+                }
             }
+        )
+        if (isBuffering) {
+            CircularProgressIndicator(
+                modifier = Modifier.align(Alignment.Center),
+                color = Color.White
+            )
         }
-    )
+    }
 }
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-private fun YoutubePlayer(videoId: String, onLoadingChange: (Boolean) -> Unit) {
+private fun YoutubePlayer(videoId: String) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var webViewRef by remember { mutableStateOf<WebView?>(null) }
+
+    // Same fix as the ExoPlayer path: stop the embedded video/sound when the app is backgrounded.
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP -> {
+                    webViewRef?.onPause()
+                    webViewRef?.pauseTimers()
+                }
+                Lifecycle.Event.ON_RESUME -> {
+                    webViewRef?.resumeTimers()
+                    webViewRef?.onResume()
+                }
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     AndroidView(
         modifier = Modifier.fillMaxSize(),
         factory = { ctx ->
@@ -222,16 +250,6 @@ private fun YoutubePlayer(videoId: String, onLoadingChange: (Boolean) -> Unit) {
                 settings.domStorageEnabled = true
                 settings.loadWithOverviewMode = true
                 settings.useWideViewPort = true
-
-                webViewClient = object : WebViewClient() {
-                    override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-                        onLoadingChange(true)
-                    }
-
-                    override fun onPageFinished(view: WebView?, url: String?) {
-                        onLoadingChange(false)
-                    }
-                }
 
                 webChromeClient = object : WebChromeClient() {
                     private var customView: View? = null
@@ -275,7 +293,12 @@ private fun YoutubePlayer(videoId: String, onLoadingChange: (Boolean) -> Unit) {
                     FrameLayout.LayoutParams.MATCH_PARENT
                 )
             )
+            webViewRef = webView
             container
+        },
+        onRelease = {
+            webViewRef?.destroy()
+            webViewRef = null
         }
     )
 }

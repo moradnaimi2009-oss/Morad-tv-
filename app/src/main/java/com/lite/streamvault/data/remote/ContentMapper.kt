@@ -2,6 +2,7 @@ package com.lite.streamvault.data.remote
 
 import com.lite.streamvault.data.dto.AnimeDto
 import com.lite.streamvault.data.dto.AnimeEpisodeDto
+import com.lite.streamvault.data.dto.CartoonDto
 import com.lite.streamvault.data.dto.CategoryDto
 import com.lite.streamvault.data.dto.ChannelDto
 import com.lite.streamvault.data.dto.MovieDto
@@ -19,15 +20,8 @@ object ContentMapper {
     fun getFullUrl(path: String?): String? {
         if (path.isNullOrBlank()) return null
         if (path.startsWith("http://") || path.startsWith("https://")) return path
-        val base = Constants.SUPABASE_URL.trimEnd('/')
-        val cleanPath = path.trimStart('/')
-        // Supabase Storage public objects live under storage/v1/object/public/<bucket>/<path>.
-        // If the stored value already includes that prefix, don't add it twice.
-        return if (cleanPath.startsWith("storage/v1/object/public/")) {
-            "$base/$cleanPath"
-        } else {
-            "$base/storage/v1/object/public/$cleanPath"
-        }
+        val base = Constants.BASE_URL.trimEnd('/')
+        return "$base/${path.trimStart('/')}"
     }
 
     fun List<SettingRowDto>.toAppSettings(): AppSettings {
@@ -85,6 +79,19 @@ object ContentMapper {
     )
 
     fun AnimeDto.toDomain(): Anime = Anime(
+        id = id.toInt(),
+        title = title ?: "",
+        description = description ?: "",
+        posterUrl = getFullUrl(poster),
+        releaseYear = "",
+        categoryId = categoryId?.toInt(),
+        categoryName = "",
+        episodeCount = 0
+    )
+
+    // Cartoons are the exact same shape as Anime (id/title/poster/description/category),
+    // so they're modeled as an Anime domain object too — only the source table differs.
+    fun CartoonDto.toDomain(): Anime = Anime(
         id = id.toInt(),
         title = title ?: "",
         description = description ?: "",

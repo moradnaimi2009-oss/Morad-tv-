@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChildCare
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LiveTv
 import androidx.compose.material.icons.filled.Movie
@@ -103,7 +104,7 @@ private fun AppRoot(
     val currentRoute = backStack?.destination?.route
 
     val showChrome = currentRoute in setOf(
-        Routes.HOME, Routes.CHANNELS, Routes.MOVIES, Routes.ANIME
+        Routes.HOME, Routes.CHANNELS, Routes.MOVIES, Routes.ANIME, Routes.CARTOONS
     )
 
     val youtubeIdRegex = remember {
@@ -154,6 +155,7 @@ private fun AppRoot(
                         Routes.CHANNELS -> "Live Channels"
                         Routes.MOVIES -> "Movies"
                         Routes.ANIME -> "Anime"
+                        Routes.CARTOONS -> "Cartoons"
                         else -> "Morad TV"
                     }
                     Text(
@@ -186,6 +188,7 @@ private fun AppRoot(
                             if (settings.enableChannels) add(Triple(Routes.CHANNELS, "Channels", Icons.Filled.LiveTv))
                             if (settings.enableMovies) add(Triple(Routes.MOVIES, "Movies", Icons.Filled.Movie))
                             if (settings.enableAnime) add(Triple(Routes.ANIME, "Anime", Icons.Filled.PlayArrow))
+                            add(Triple(Routes.CARTOONS, "Cartoons", Icons.Filled.ChildCare))
                         }
                         items.forEach { (route, label, icon) ->
                             val selected = currentRoute == route

@@ -21,7 +21,9 @@ interface StreamVaultRepository {
     suspend fun getChannels(): List<Channel>
     suspend fun getMovies(): List<Movie>
     suspend fun getAnime(): List<Anime>
+    suspend fun getCartoons(): List<Anime>
     suspend fun getEpisodes(animeId: Int): List<AnimeEpisode>
+    suspend fun getCartoonEpisodes(cartoonId: Int): List<AnimeEpisode>
     suspend fun getAds(): List<AdCampaign>
 }
 
@@ -57,9 +59,19 @@ class StreamVaultRepositoryImpl @Inject constructor(
         block = { api.getAnime().map { it.toDomain() } }
     )
 
+    override suspend fun getCartoons(): List<Anime> = safeCall(
+        default = emptyList(),
+        block = { api.getCartoons().map { it.toDomain() } }
+    )
+
     override suspend fun getEpisodes(animeId: Int): List<AnimeEpisode> = safeCall(
         default = emptyList(),
         block = { api.getEpisodes("eq.$animeId").map { it.toDomain() } }
+    )
+
+    override suspend fun getCartoonEpisodes(cartoonId: Int): List<AnimeEpisode> = safeCall(
+        default = emptyList(),
+        block = { api.getCartoonEpisodes("eq.$cartoonId").map { it.toDomain() } }
     )
 
     // الإعلانات مو مربوطة بعد بالجدول الجديد — راجع لاحقًا

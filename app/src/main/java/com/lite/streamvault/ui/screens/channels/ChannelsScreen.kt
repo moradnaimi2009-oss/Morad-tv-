@@ -6,21 +6,22 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LiveTv
-import androidx.compose.material.icons.filled.PlayCircle
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -34,13 +35,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.lite.streamvault.domain.model.Channel
-import com.lite.streamvault.ui.components.GlassmorphismCard
-import com.lite.streamvault.ui.components.ShimmerContentCard
+import com.lite.streamvault.ui.components.ShimmerBox
+import com.lite.streamvault.ui.components.ShimmerLine
 import com.lite.streamvault.ui.theme.Blue400
 import com.lite.streamvault.ui.theme.Blue500
 import com.lite.streamvault.ui.theme.TextMuted
@@ -85,15 +87,19 @@ fun ChannelsScreen(
         val filtered = if (state.selectedCategory == "All") state.channels
         else state.channels.filter { it.categoryName == state.selectedCategory }
 
-        LazyColumn(
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+        // 3 per row with a big, prominent logo tile (was previously a single-column list
+        // with a small 60x40dp logo).
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(3),
+            contentPadding = PaddingValues(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             if (state.isLoading) {
-                items(8) { ShimmerContentCard() }
+                items(9) { ChannelTileShimmer() }
             } else {
                 items(filtered) { channel ->
-                    ChannelRow(channel) { onChannelClick(channel) }
+                    ChannelTile(channel) { onChannelClick(channel) }
                 }
             }
         }
@@ -101,62 +107,82 @@ fun ChannelsScreen(
 }
 
 @Composable
-private fun ChannelRow(channel: Channel, onClick: () -> Unit) {
-    GlassmorphismCard(
+private fun ChannelTile(channel: Channel, onClick: () -> Unit) {
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(72.dp)
-            .clickable(onClick = onClick),
-        cornerRadius = 20
+            .clickable(onClick = onClick)
     ) {
-        Row(
+        Box(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxWidth()
+                .aspectRatio(1f)
+                .clip(RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center
         ) {
+            if (!channel.logoUrl.isNullOrBlank()) {
+                AsyncImage(
+                    model = channel.logoUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(10.dp)
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Filled.LiveTv,
+                    contentDescription = null,
+                    tint = Blue400,
+                    modifier = Modifier.size(36.dp)
+                )
+            }
             Box(
                 modifier = Modifier
-                    .size(width = 60.dp, height = 40.dp)
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center
+                    .align(Alignment.BottomEnd)
+                    .padding(6.dp)
+                    .clip(CircleShape)
+                    .background(Blue500.copy(alpha = 0.9f))
+                    .padding(5.dp)
             ) {
-                if (!channel.logoUrl.isNullOrBlank()) {
-                    AsyncImage(
-                        model = channel.logoUrl,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
-                    Icon(Icons.Filled.LiveTv, contentDescription = null, tint = Blue400)
-                }
-            }
-            Spacer(Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = channel.name,
-                    color = Color.White,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = channel.categoryName ?: "",
-                    color = TextMuted,
-                    style = MaterialTheme.typography.bodySmall,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                Icon(
+                    imageVector = Icons.Filled.PlayArrow,
+                    contentDescription = "Play",
+                    tint = Color.White,
+                    modifier = Modifier.size(14.dp)
                 )
             }
-            Icon(
-                imageVector = Icons.Filled.PlayCircle,
-                contentDescription = "Play",
-                tint = Blue400,
-                modifier = Modifier.size(28.dp)
-            )
         }
+        Text(
+            text = channel.name,
+            color = Color.White,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 6.dp)
+        )
+    }
+}
+
+@Composable
+private fun ChannelTileShimmer() {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        ShimmerBox(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+                .clip(RoundedCornerShape(16.dp))
+        )
+        ShimmerLine(
+            modifier = Modifier
+                .fillMaxWidth(0.6f)
+                .padding(top = 8.dp)
+                .height(10.dp)
+        )
     }
 }
