@@ -22,6 +22,9 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChildCare
+import androidx.compose.material.icons.filled.CardGiftcard
+import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LiveTv
 import androidx.compose.material.icons.filled.Movie
@@ -36,6 +39,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -165,6 +170,22 @@ private fun AppRoot(
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.weight(1f)
                     )
+                    IconButton(onClick = { navController.navigate(Routes.MY_LIST) }) {
+                        Icon(Icons.Filled.Favorite, contentDescription = "My List", tint = Color.White, modifier = Modifier.size(22.dp))
+                    }
+                    val context = LocalContext.current
+                    IconButton(onClick = {
+                        val intent = Intent(
+                            Intent.ACTION_VIEW,
+                            Uri.parse("https://whatsapp.com/channel/0029Vb8CSTkFXUuV0xm4Et3m")
+                        )
+                        context.startActivity(intent)
+                    }) {
+                        Icon(Icons.Filled.Chat, contentDescription = "Contact us on WhatsApp", tint = Color.White, modifier = Modifier.size(22.dp))
+                    }
+                    IconButton(onClick = { navController.navigate(Routes.REFERRAL) }) {
+                        Icon(Icons.Filled.CardGiftcard, contentDescription = "Invite Friends", tint = Color.White, modifier = Modifier.size(24.dp))
+                    }
                     IconButton(onClick = { navController.navigate(Routes.SEARCH) }) {
                         Icon(Icons.Filled.Search, contentDescription = "Search", tint = Color.White, modifier = Modifier.size(26.dp))
                     }
@@ -174,10 +195,13 @@ private fun AppRoot(
         bottomBar = {
             if (showChrome) {
                 Column {
-                    BannerAdView(
-                        adUnitId = com.lite.streamvault.util.Constants.ADMOB_BANNER_ID,
-                        showAds = settings.showAds
-                    )
+                    val activeCampaign by adManager.activeCampaign.collectAsState()
+                    if (activeCampaign?.network?.lowercase() == "admob" && !activeCampaign?.bannerId.isNullOrBlank()) {
+                        BannerAdView(
+                            adUnitId = activeCampaign!!.bannerId!!,
+                            showAds = settings.showAds
+                        )
+                    }
                     NavigationBar(
                         containerColor = DarkCard,
                         tonalElevation = 0.dp,

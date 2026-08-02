@@ -1,5 +1,6 @@
 package com.lite.streamvault.data.remote
 
+import com.lite.streamvault.data.dto.AdCampaignDto
 import com.lite.streamvault.data.dto.AnimeDto
 import com.lite.streamvault.data.dto.AnimeEpisodeDto
 import com.lite.streamvault.data.dto.CartoonDto
@@ -8,6 +9,7 @@ import com.lite.streamvault.data.dto.ChannelDto
 import com.lite.streamvault.data.dto.MovieDto
 import com.lite.streamvault.data.dto.SettingRowDto
 import com.lite.streamvault.domain.model.Anime
+import com.lite.streamvault.domain.model.AdCampaign
 import com.lite.streamvault.domain.model.AnimeEpisode
 import com.lite.streamvault.domain.model.AppSettings
 import com.lite.streamvault.domain.model.Category
@@ -108,6 +110,17 @@ object ContentMapper {
         episodeNumber = episodeNumber,
         title = title ?: "",
         streamUrl = videoUrl ?: "",
-        duration = ""
+        duration = "",
+        isRestricted = isRestricted
+    )
+
+    fun AdCampaignDto.toDomain(): AdCampaign = AdCampaign(
+        id = id.toInt(),
+        network = network ?: "",
+        isActive = isActive,
+        bannerId = bannerId,
+        interstitialId = interstitialId,
+        appId = appId,
+        priority = priority
     )
 }

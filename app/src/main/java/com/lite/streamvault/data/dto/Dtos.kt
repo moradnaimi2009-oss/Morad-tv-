@@ -57,7 +57,8 @@ data class AnimeEpisodeDto(
     @SerializedName("episode_number") val episodeNumber: Int = 0,
     @SerializedName("season") val season: Int = 1,
     @SerializedName("title") val title: String? = null,
-    @SerializedName("video_url") val videoUrl: String? = null
+    @SerializedName("video_url") val videoUrl: String? = null,
+    @SerializedName("is_restricted") val isRestricted: Boolean = false
 )
 
 data class CategoryDto(
@@ -71,4 +72,30 @@ data class CategoryDto(
 data class SettingRowDto(
     @SerializedName("key") val key: String,
     @SerializedName("value") val value: String?
+)
+
+data class ReferralStatusDto(
+    @SerializedName("referral_count") val referralCount: Int = 0,
+    @SerializedName("unlocked_restricted") val unlockedRestricted: Boolean = false
+)
+
+data class RedeemReferralResultDto(
+    @SerializedName("success") val success: Boolean = false,
+    @SerializedName("message") val message: String? = null,
+    @SerializedName("referral_count") val referralCount: Int = 0
+)
+
+data class AdCampaignDto(
+    @SerializedName("id") val id: Long = 0,
+    @SerializedName("network") val network: String? = null,
+    @SerializedName("is_active") val isActive: Boolean = false,
+    @SerializedName("banner_id") val bannerId: String? = null,
+    @SerializedName("interstitial_id") val interstitialId: String? = null,
+    @SerializedName("app_id") val appId: String? = null,
+    @SerializedName("priority") val priority: Int = 0
+)
+
+data class LeaderboardRowDto(
+    @SerializedName("code") val code: String = "",
+    @SerializedName("referral_count") val referralCount: Int = 0
 )

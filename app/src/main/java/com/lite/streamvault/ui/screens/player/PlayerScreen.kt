@@ -46,6 +46,7 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import com.lite.streamvault.ui.theme.StatusError
+import com.lite.streamvault.util.LocalLibraryStore
 
 private val YOUTUBE_ID_REGEX = Regex(
     "(?:youtu\\.be/|youtube\\.com/(?:watch\\?v=|live/|embed/|shorts/))([a-zA-Z0-9_-]{6,})"
@@ -95,7 +96,7 @@ fun PlayerScreen(
         if (youtubeId != null) {
             YoutubePlayer(videoId = youtubeId)
         } else {
-            ExoStreamPlayer(videoUrl = videoUrl)
+            ExoStreamPlayer(videoUrl = videoUrl, isLive = isLive)
         }
 
         Row(
@@ -139,9 +140,10 @@ fun PlayerScreen(
 }
 
 @Composable
-private fun ExoStreamPlayer(videoUrl: String) {
+private fun ExoStreamPlayer(videoUrl: String, isLive: Boolean) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val library = remember { LocalLibraryStore(context) }
 
     // Starts true so the spinner is visible immediately, before the first player callback fires.
     var isBuffering by remember { mutableStateOf(true) }
@@ -150,7 +152,23 @@ private fun ExoStreamPlayer(videoUrl: String) {
         ExoPlayer.Builder(context).build().apply {
             setMediaItem(MediaItem.fromUri(Uri.parse(videoUrl)))
             playWhenReady = true
+            if (!isLive) {
+                val resumeAt = library.getProgress(videoUrl)
+                if (resumeAt > 0) seekTo(resumeAt)
+            }
             prepare()
+        }
+    }
+
+    // "Continue Watching": remember where we were, so re-opening this same URL resumes there.
+    // Must save BEFORE release() (reading position from a released player is unsafe), so
+    // this is one combined effect rather than two separate ones.
+    DisposableEffect(Unit) {
+        onDispose {
+            if (!isLive) {
+                library.saveProgress(videoUrl, exoPlayer.currentPosition, exoPlayer.duration)
+            }
+            exoPlayer.release()
         }
     }
 

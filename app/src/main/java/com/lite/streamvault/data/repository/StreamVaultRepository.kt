@@ -12,6 +12,8 @@ import com.lite.streamvault.domain.model.AppSettings
 import com.lite.streamvault.domain.model.Category
 import com.lite.streamvault.domain.model.Channel
 import com.lite.streamvault.domain.model.Movie
+import com.lite.streamvault.domain.model.LeaderboardEntry
+import com.lite.streamvault.domain.model.ReferralStatus
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -25,6 +27,10 @@ interface StreamVaultRepository {
     suspend fun getEpisodes(animeId: Int): List<AnimeEpisode>
     suspend fun getCartoonEpisodes(cartoonId: Int): List<AnimeEpisode>
     suspend fun getAds(): List<AdCampaign>
+    suspend fun ensureReferralCode(deviceId: String, code: String)
+    suspend fun getReferralStatus(deviceId: String): ReferralStatus
+    suspend fun redeemReferral(code: String, newDeviceId: String): Pair<Boolean, String>
+    suspend fun getTopReferrers(): List<LeaderboardEntry>
 }
 
 @Singleton
@@ -74,8 +80,40 @@ class StreamVaultRepositoryImpl @Inject constructor(
         block = { api.getCartoonEpisodes("eq.$cartoonId").map { it.toDomain() } }
     )
 
-    // الإعلانات مو مربوطة بعد بالجدول الجديد — راجع لاحقًا
-    override suspend fun getAds(): List<AdCampaign> = emptyList()
+    // فعّلنا الجدول: يجيب الحملات الفعالة، الأولوية الأقل رقم = تُختار أول
+    override suspend fun getAds(): List<AdCampaign> = safeCall(
+        default = emptyList(),
+        block = { api.getAdCampaigns().map { it.toDomain() }.filter { it.isActive }.sortedBy { it.priority } }
+    )
+
+    override suspend fun ensureReferralCode(deviceId: String, code: String) = safeCall(
+        default = Unit,
+        block = { api.ensureReferralCode(mapOf("p_device_id" to deviceId, "p_code" to code)) }
+    )
+
+    override suspend fun getReferralStatus(deviceId: String): ReferralStatus = safeCall(
+        default = ReferralStatus(),
+        block = {
+            val row = api.getReferralStatus("eq.$deviceId").firstOrNull()
+            ReferralStatus(
+                referralCount = row?.referralCount ?: 0,
+                unlockedRestricted = row?.unlockedRestricted ?: false
+            )
+        }
+    )
+
+    override suspend fun redeemReferral(code: String, newDeviceId: String): Pair<Boolean, String> = safeCall(
+        default = false to "error",
+        block = {
+            val result = api.redeemReferral(mapOf("p_code" to code, "p_new_device_id" to newDeviceId))
+            result.success to (result.message ?: "")
+        }
+    )
+
+    override suspend fun getTopReferrers(): List<LeaderboardEntry> = safeCall(
+        default = emptyList(),
+        block = { api.getTopReferrers().map { LeaderboardEntry(it.code, it.referralCount) } }
+    )
 
     private inline fun <T> safeCall(default: T, block: () -> T): T = try {
         block()

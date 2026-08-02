@@ -25,7 +25,9 @@ import com.lite.streamvault.ui.screens.detail.AnimeDetailScreen
 import com.lite.streamvault.ui.screens.detail.MovieDetailScreen
 import com.lite.streamvault.ui.screens.home.HomeScreen
 import com.lite.streamvault.ui.screens.movies.MoviesScreen
+import com.lite.streamvault.ui.screens.mylist.MyListScreen
 import com.lite.streamvault.ui.screens.player.PlayerScreen
+import com.lite.streamvault.ui.screens.referral.ReferralScreen
 import com.lite.streamvault.ui.screens.search.SearchScreen
 import com.lite.streamvault.ui.screens.splash.SplashScreen
 import com.lite.streamvault.viewmodel.AnimeDetailViewModel
@@ -147,11 +149,31 @@ fun NavGraph(
                 cartoon != null -> AnimeDetailScreen(
                     anime = cartoon,
                     episodes = state.episodes,
+                    contentType = "cartoon",
                     onBack = { navController.popBackStack() },
-                    onEpisodeClick = { ep, title -> onPlayWithInterstitial(ep.streamUrl, title, false) }
+                    onEpisodeClick = { ep, title ->
+                        if (ep.isRestricted && !state.unlockedRestricted) {
+                            navController.navigate(Routes.REFERRAL)
+                        } else {
+                            onPlayWithInterstitial(ep.streamUrl, title, false)
+                        }
+                    }
                 )
                 else -> DetailLoadingPlaceholder()
             }
+        }
+
+        composable(Routes.REFERRAL) {
+            ReferralScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.MY_LIST) {
+            MyListScreen(
+                onBack = { navController.popBackStack() },
+                onMovieClick = { id -> navController.navigate(Routes.movieDetail(id)) },
+                onAnimeClick = { id -> navController.navigate(Routes.animeDetail(id)) },
+                onCartoonClick = { id -> navController.navigate(Routes.cartoonDetail(id)) }
+            )
         }
 
         composable(

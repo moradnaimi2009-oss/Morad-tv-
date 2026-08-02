@@ -68,7 +68,19 @@ data class AnimeEpisode(
     val episodeNumber: Int,
     val title: String? = null,
     val streamUrl: String = "",
-    val duration: String = ""
+    val duration: String = "",
+    val isRestricted: Boolean = false
+)
+
+data class ReferralStatus(
+    val referralCount: Int = 0,
+    val unlockedRestricted: Boolean = false,
+    val goal: Int = 10
+)
+
+data class LeaderboardEntry(
+    val code: String,
+    val referralCount: Int
 )
 
 data class AdCampaign(

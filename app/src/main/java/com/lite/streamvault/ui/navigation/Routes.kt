@@ -11,6 +11,8 @@ object Routes {
     const val MOVIE_DETAIL = "movie_detail/{movieId}"
     const val ANIME_DETAIL = "anime_detail/{animeId}"
     const val CARTOON_DETAIL = "cartoon_detail/{cartoonId}"
+    const val REFERRAL = "referral"
+    const val MY_LIST = "my_list"
     const val PLAYER = "player/{videoUrl}/{title}/{isLive}"
 
     fun movieDetail(id: Int) = "movie_detail/$id"

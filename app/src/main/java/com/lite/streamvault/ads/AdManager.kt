@@ -3,6 +3,8 @@ package com.lite.streamvault.ads
 import android.app.Activity
 import android.view.ViewGroup
 import com.lite.streamvault.domain.model.AdCampaign
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -13,13 +15,18 @@ class AdManager @Inject constructor() {
     @Volatile private var initialized = false
     @Volatile private var showAds = true
 
+    private val _activeCampaign = MutableStateFlow<AdCampaign?>(null)
+    val activeCampaign: StateFlow<AdCampaign?> = _activeCampaign
+
     fun configure(campaigns: List<AdCampaign>, showAds: Boolean, activity: Activity) {
         this.showAds = showAds
         if (!showAds || campaigns.isEmpty()) {
             platform = NoOpAdPlatform()
+            _activeCampaign.value = null
             return
         }
-        val chosen = pickFirstActive(campaigns)
+        val chosen = pickBestActive(campaigns)
+        _activeCampaign.value = chosen
         if (chosen == null) {
             platform = NoOpAdPlatform()
             return
@@ -59,13 +66,8 @@ class AdManager @Inject constructor() {
         initialized = false
     }
 
-    private fun pickFirstActive(campaigns: List<AdCampaign>): AdCampaign? {
-        val priority = listOf(AdConfig.ADMOB, AdConfig.APPLOVIN, AdConfig.STARTAPP, AdConfig.UNITY)
-        val active = campaigns.filter { it.isActive }
-        for (network in priority) {
-            val match = active.firstOrNull { it.network.lowercase() == network }
-            if (match != null) return match
-        }
-        return active.firstOrNull()
-    }
+    // Lower "priority" number wins — lets you control which network shows first
+    // straight from the ad_campaigns table without a new app release.
+    private fun pickBestActive(campaigns: List<AdCampaign>): AdCampaign? =
+        campaigns.filter { it.isActive }.minByOrNull { it.priority }
 }
