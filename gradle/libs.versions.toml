@@ -17,7 +17,7 @@ media3 = "1.5.1"
 accompanist = "0.36.0"
 admob = "23.6.0"
 applovin = "13.0.1"
-startapp = "5.1.0"
+startapp = "5.3.0"
 unity = "4.12.5"
 coreKtx = "1.15.0"
 splashscreen = "1.0.1"
@@ -63,7 +63,7 @@ accompanist-placeholder-material3 = { group = "com.google.accompanist", name = "
 
 admob = { group = "com.google.android.gms", name = "play-services-ads", version.ref = "admob" }
 applovin = { group = "com.applovin", name = "applovin-sdk", version.ref = "applovin" }
-startapp = { group = "com.startapp", name = "startapp-inapp-plus", version.ref = "startapp" }
+startapp = { group = "com.startapp", name = "inapp-sdk", version.ref = "startapp" }
 unity = { group = "com.unity3d.ads", name = "unity-ads", version.ref = "unity" }
 
 [plugins]
