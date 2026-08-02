@@ -29,6 +29,12 @@
             android:name="applovin.sdk.key"
             android:value="${applovinSdkKey}" />
 
+        <!-- StartApp gets its App ID at runtime from ad_campaigns (Supabase), not here -->
+        <provider
+            android:name="com.startapp.sdk.adsbase.StartAppInitProvider"
+            android:authorities="${applicationId}.startappinitprovider"
+            tools:node="remove" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
