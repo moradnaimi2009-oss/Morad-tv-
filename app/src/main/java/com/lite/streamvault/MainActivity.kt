@@ -56,6 +56,9 @@ import androidx.navigation.compose.rememberNavController
 import com.lite.streamvault.ads.AdManager
 import com.lite.streamvault.domain.model.AppSettings
 import com.lite.streamvault.ui.components.BannerAdView
+import com.lite.streamvault.ui.components.AppLovinBannerView
+import com.lite.streamvault.ui.components.StartAppBannerView
+import com.lite.streamvault.ui.components.UnityBannerAdView
 import com.lite.streamvault.ui.navigation.NavGraph
 import com.lite.streamvault.ui.navigation.Routes
 import com.lite.streamvault.ui.theme.Blue400
@@ -196,11 +199,23 @@ private fun AppRoot(
             if (showChrome) {
                 Column {
                     val activeCampaign by adManager.activeCampaign.collectAsState()
-                    if (activeCampaign?.network?.lowercase() == "admob" && !activeCampaign?.bannerId.isNullOrBlank()) {
-                        BannerAdView(
-                            adUnitId = activeCampaign!!.bannerId!!,
-                            showAds = settings.showAds
-                        )
+                    when (activeCampaign?.network?.lowercase()) {
+                        "admob" -> if (!activeCampaign?.bannerId.isNullOrBlank()) {
+                            BannerAdView(
+                                adUnitId = activeCampaign!!.bannerId!!,
+                                showAds = settings.showAds
+                            )
+                        }
+                        "startapp" -> if (settings.showAds) {
+                            StartAppBannerView(activity = activity)
+                        }
+                        "applovin" -> if (settings.showAds && !activeCampaign?.bannerId.isNullOrBlank()) {
+                            AppLovinBannerView(activity = activity, adUnitId = activeCampaign!!.bannerId!!)
+                        }
+                        "unity" -> if (settings.showAds && !activeCampaign?.bannerId.isNullOrBlank()) {
+                            UnityBannerAdView(activity = activity, placementId = activeCampaign!!.bannerId!!)
+                        }
+                        else -> {}
                     }
                     NavigationBar(
                         containerColor = DarkCard,

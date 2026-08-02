@@ -41,6 +41,9 @@ class UnityPlatform(private val config: AdConfig) : AdPlatform {
     }
 
     override fun isInterstitialReady(): Boolean = ready
-    override fun loadBanner(container: ViewGroup) {}
+
+    override fun loadBanner(container: ViewGroup) {
+        // Handled by a dedicated Compose view (UnityBannerAdView) instead.
+    }
     override fun destroy() {}
 }
