@@ -21,7 +21,7 @@ android {
         vectorDrawables { useSupportLibrary = true }
 
         manifestPlaceholders["admobAppId"] = "ca-app-pub-3940256099942544~3347511713"
-        manifestPlaceholders["applovinSdkKey"] = "YOUR_APPLOVIN_SDK_KEY"
+        manifestPlaceholders["applovinSdkKey"] = "c0GvQCDxz9c5qb51lTeosdlh_UlDnQATUwL7pHBRCPEVrSh72vLhKhSEDQhUsbGoW0mRif9JhbAWU5Hg_s_LdC"
     }
 
     signingConfigs {
