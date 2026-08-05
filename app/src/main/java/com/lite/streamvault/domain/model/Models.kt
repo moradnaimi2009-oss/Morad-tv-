@@ -75,7 +75,7 @@ data class AnimeEpisode(
 data class ReferralStatus(
     val referralCount: Int = 0,
     val unlockedRestricted: Boolean = false,
-    val goal: Int = 10
+    val goal: Int = 5
 )
 
 data class LeaderboardEntry(

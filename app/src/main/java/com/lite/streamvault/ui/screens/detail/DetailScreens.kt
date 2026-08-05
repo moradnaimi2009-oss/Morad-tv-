@@ -1,5 +1,6 @@
 package com.lite.streamvault.ui.screens.detail
 
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -25,8 +26,10 @@ import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PlayCircle
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -56,6 +59,7 @@ import com.lite.streamvault.ui.theme.Blue500
 import com.lite.streamvault.ui.theme.DarkBg
 import com.lite.streamvault.ui.theme.TextMuted
 import com.lite.streamvault.ui.theme.TextSecondary
+import com.lite.streamvault.util.DeviceIdProvider
 import com.lite.streamvault.util.LocalLibraryStore
 
 @Composable
@@ -66,6 +70,7 @@ fun MovieDetailScreen(
 ) {
     val context = LocalContext.current
     val library = remember { LocalLibraryStore(context) }
+    val deviceIdProvider = remember { DeviceIdProvider(context) }
     var isFavorite by remember { mutableStateOf(library.isFavorite("movie:${movie.id}")) }
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -127,6 +132,27 @@ fun MovieDetailScreen(
                             contentDescription = "My List",
                             tint = if (isFavorite) Blue500 else Color.White
                         )
+                    }
+                    IconButton(
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(
+                                    Intent.EXTRA_TEXT,
+                                    "شاهد \"${movie.title}\" على تطبيق Morad TV! 🎬\n" +
+                                        "استخدمي كود الدعوة: ${deviceIdProvider.referralCode}"
+                                )
+                            }
+                            context.startActivity(Intent.createChooser(intent, "شارك"))
+                        },
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .statusBarsPadding()
+                            .padding(top = 8.dp, end = 56.dp)
+                            .clip(CircleShape)
+                            .background(Color.Black.copy(alpha = 0.5f))
+                    ) {
+                        Icon(Icons.Filled.Share, contentDescription = "Share", tint = Color.White)
                     }
                 }
             }
@@ -192,10 +218,12 @@ fun AnimeDetailScreen(
     episodes: List<AnimeEpisode>,
     onBack: () -> Unit,
     onEpisodeClick: (AnimeEpisode, String) -> Unit,
-    contentType: String = "anime" // "anime" or "cartoon" — keeps My List keys from colliding
+    contentType: String = "anime", // "anime" or "cartoon" — keeps My List keys from colliding
+    unlockedRestricted: Boolean = true // only meaningful for cartoons; anime is never locked
 ) {
     val context = LocalContext.current
     val library = remember { LocalLibraryStore(context) }
+    val deviceIdProvider = remember { DeviceIdProvider(context) }
     var isFavorite by remember { mutableStateOf(library.isFavorite("$contentType:${anime.id}")) }
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -258,6 +286,27 @@ fun AnimeDetailScreen(
                             tint = if (isFavorite) Blue500 else Color.White
                         )
                     }
+                    IconButton(
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(
+                                    Intent.EXTRA_TEXT,
+                                    "شاهد \"${anime.title}\" على تطبيق Morad TV! 🎬\n" +
+                                        "استخدمي كود الدعوة: ${deviceIdProvider.referralCode}"
+                                )
+                            }
+                            context.startActivity(Intent.createChooser(intent, "شارك"))
+                        },
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .statusBarsPadding()
+                            .padding(top = 8.dp, end = 56.dp)
+                            .clip(CircleShape)
+                            .background(Color.Black.copy(alpha = 0.5f))
+                    ) {
+                        Icon(Icons.Filled.Share, contentDescription = "Share", tint = Color.White)
+                    }
                 }
             }
             item {
@@ -302,6 +351,7 @@ fun AnimeDetailScreen(
                 EpisodeItem(
                     episode = ep,
                     animeTitle = anime.title,
+                    isLocked = ep.isRestricted && !unlockedRestricted,
                     onClick = { onEpisodeClick(ep, "${anime.title} - EP ${ep.episodeNumber}") }
                 )
             }
@@ -314,6 +364,7 @@ fun AnimeDetailScreen(
 private fun EpisodeItem(
     episode: AnimeEpisode,
     animeTitle: String,
+    isLocked: Boolean = false,
     onClick: () -> Unit
 ) {
     val context = LocalContext.current
@@ -324,6 +375,10 @@ private fun EpisodeItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp)
+            .then(
+                if (isLocked) Modifier.background(Color.Black.copy(alpha = 0.55f), RoundedCornerShape(16.dp))
+                else Modifier
+            )
             .clickable(onClick = onClick),
         cornerRadius = 16
     ) {
@@ -337,24 +392,33 @@ private fun EpisodeItem(
                 modifier = Modifier
                     .size(44.dp)
                     .clip(CircleShape)
-                    .background(Blue500.copy(alpha = 0.15f)),
+                    .background(Blue500.copy(alpha = if (isLocked) 0.06f else 0.15f)),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "${episode.episodeNumber}",
-                    color = Blue400,
+                    color = if (isLocked) TextMuted else Blue400,
                     style = MaterialTheme.typography.titleSmall
                 )
             }
             Spacer(Modifier.width(12.dp))
             Text(
                 text = episode.title ?: "Episode ${episode.episodeNumber}",
-                color = if (watched) TextMuted else Color.White,
+                color = if (isLocked) TextMuted else if (watched) TextMuted else Color.White,
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier.weight(1f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+            if (isLocked) {
+                Icon(
+                    imageVector = Icons.Filled.Lock,
+                    contentDescription = "Locked — invite 5 friends to unlock",
+                    tint = TextMuted,
+                    modifier = Modifier.size(22.dp)
+                )
+                return@Row
+            }
             if (watched) {
                 Icon(
                     imageVector = Icons.Filled.CheckCircle,

@@ -150,6 +150,7 @@ fun NavGraph(
                     anime = cartoon,
                     episodes = state.episodes,
                     contentType = "cartoon",
+                    unlockedRestricted = state.unlockedRestricted,
                     onBack = { navController.popBackStack() },
                     onEpisodeClick = { ep, title ->
                         if (ep.isRestricted && !state.unlockedRestricted) {
