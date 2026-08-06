@@ -20,7 +20,7 @@ class UnityPlatform(private val config: AdConfig) : AdPlatform {
         // UnityAds.initialize is ASYNC — loading an ad before it actually finishes
         // silently fails. So the first ad load only happens inside the completion
         // callback, not right after this call returns.
-        UnityAds.initialize(activity, gameId, false, object : IUnityAdsInitializationListener {
+        UnityAds.initialize(activity, gameId, true, object : IUnityAdsInitializationListener {
             override fun onInitializationComplete() {
                 initialized = true
                 loadInterstitial()
