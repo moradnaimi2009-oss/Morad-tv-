@@ -440,6 +440,7 @@ private fun EpisodeItem(
 
 @Composable
 private fun NativeAdPlaceholder() {
+    val activity = LocalContext.current as? android.app.Activity
     GlassmorphismCard(
         modifier = Modifier
             .fillMaxWidth()
@@ -447,11 +448,18 @@ private fun NativeAdPlaceholder() {
         cornerRadius = 16,
         alpha = 0.06f
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("Ad", color = TextMuted, style = MaterialTheme.typography.labelMedium)
+        if (activity != null) {
+            // Wired to StartApp specifically for now (the network currently in use).
+            // If you switch networks later this needs the same per-network branching
+            // as the bottom banner in MainActivity.
+            com.lite.streamvault.ui.components.StartAppBannerView(activity = activity)
+        } else {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Ad", color = TextMuted, style = MaterialTheme.typography.labelMedium)
+            }
         }
     }
 }
