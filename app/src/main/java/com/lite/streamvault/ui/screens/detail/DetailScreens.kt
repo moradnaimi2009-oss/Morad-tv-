@@ -140,7 +140,7 @@ fun MovieDetailScreen(
                                 putExtra(
                                     Intent.EXTRA_TEXT,
                                     "شاهد \"${movie.title}\" على تطبيق Morad TV! 🎬\n" +
-                                        "استخدمي كود الدعوة: ${deviceIdProvider.referralCode}\nحمّلي التطبيق: https://moradtv.lovestoblog.com/?i=${deviceIdProvider.referralCode}"
+                                        "استخدم كود الدعوة: ${deviceIdProvider.referralCode}\nحمّل التطبيق: https://moradtv.lovestoblog.com/?i=${deviceIdProvider.referralCode}"
                                 )
                             }
                             context.startActivity(Intent.createChooser(intent, "شارك"))
@@ -293,7 +293,7 @@ fun AnimeDetailScreen(
                                 putExtra(
                                     Intent.EXTRA_TEXT,
                                     "شاهد \"${anime.title}\" على تطبيق Morad TV! 🎬\n" +
-                                        "استخدمي كود الدعوة: ${deviceIdProvider.referralCode}\nحمّلي التطبيق: https://moradtv.lovestoblog.com/?i=${deviceIdProvider.referralCode}"
+                                        "استخدم كود الدعوة: ${deviceIdProvider.referralCode}\nحمّل التطبيق: https://moradtv.lovestoblog.com/?i=${deviceIdProvider.referralCode}"
                                 )
                             }
                             context.startActivity(Intent.createChooser(intent, "شارك"))

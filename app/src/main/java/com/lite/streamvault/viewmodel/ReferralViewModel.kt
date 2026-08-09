@@ -68,7 +68,7 @@ class ReferralViewModel @Inject constructor(
             val friendly = when {
                 success -> "تم بنجاح! 🎉"
                 message == "self_referral" -> "ما تقدر تستخدم كودك أنت"
-                message == "already_used" -> "دخلتِ كود دعوة قبل كذا، ما يصير مرتين"
+                message == "already_used" -> "تم استخدام كود دعوة من قبل، لا يمكن التكرار"
                 message == "invalid_code" -> "الكود غير صحيح"
                 else -> "صار خطأ، جرّبي مرة ثانية"
             }

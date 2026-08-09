@@ -129,7 +129,7 @@ private fun SectionHeader(title: String, onSeeAll: () -> Unit) {
             fontWeight = FontWeight.Bold
         )
         Text(
-            text = "شوفي الكل",
+            text = "عرض الكل",
             color = Blue400,
             style = MaterialTheme.typography.labelMedium,
             modifier = Modifier.clickable(onClick = onSeeAll)

@@ -130,10 +130,14 @@ fun ReferralScreen(
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            text = if (state.unlocked)
-                "🎉 مبروك! فتحتِ الحلقات الحصرية بقسم الكرتون"
-            else
-                "ادعِ ${state.goal - state.referralCount} صديق كمان عشان تفتحين الحلقات الحصرية بقسم الكرتون",
+            text = when {
+                state.unlocked -> "🎉 مبروك! فتحتِ الحلقات الحصرية بقسم الكرتون"
+                state.referralCount == 0 -> "ابدأ بدعوة أول صديق!"
+                state.referralCount < 3 -> "🎉 بداية موفقة! كملي كذا"
+                state.referralCount < 6 -> "👏 أنتِ بالطريق الصحيح"
+                state.referralCount < state.goal -> "🔥 قريبة جداً! باقي ${state.goal - state.referralCount} بس"
+                else -> "ادعِ ${state.goal - state.referralCount} صديق كمان لفتح الحلقات الحصرية بقسم الكرتون"
+            },
             color = if (state.unlocked) Blue500 else Color.White.copy(alpha = 0.7f),
             style = MaterialTheme.typography.bodySmall
         )
