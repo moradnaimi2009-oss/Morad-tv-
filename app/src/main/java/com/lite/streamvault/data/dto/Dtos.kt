@@ -47,7 +47,8 @@ data class CartoonDto(
     @SerializedName("description") val description: String? = null,
     @SerializedName("trailer_url") val trailerUrl: String? = null,
     @SerializedName("is_active") val isActive: Boolean = true,
-    @SerializedName("views") val views: Int = 0
+    @SerializedName("views") val views: Int = 0,
+    @SerializedName("is_restricted") val isRestricted: Boolean = false
 )
 
 data class AnimeEpisodeDto(

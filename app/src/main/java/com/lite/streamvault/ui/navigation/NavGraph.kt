@@ -80,9 +80,12 @@ fun NavGraph(
         }
 
         composable(Routes.CARTOONS) {
-            CartoonsScreen(onCartoonClick = { cartoon ->
-                navController.navigate(Routes.cartoonDetail(cartoon.id))
-            })
+            CartoonsScreen(
+                onCartoonClick = { cartoon ->
+                    navController.navigate(Routes.cartoonDetail(cartoon.id))
+                },
+                onLockedClick = { navController.navigate(Routes.REFERRAL) }
+            )
         }
 
         composable(Routes.SEARCH) {

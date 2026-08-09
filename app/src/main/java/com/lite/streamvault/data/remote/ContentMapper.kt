@@ -101,7 +101,8 @@ object ContentMapper {
         releaseYear = "",
         categoryId = categoryId?.toInt(),
         categoryName = "",
-        episodeCount = 0
+        episodeCount = 0,
+        isRestricted = isRestricted
     )
 
     fun AnimeEpisodeDto.toDomain(): AnimeEpisode = AnimeEpisode(

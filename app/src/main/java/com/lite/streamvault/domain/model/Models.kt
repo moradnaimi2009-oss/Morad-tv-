@@ -59,7 +59,8 @@ data class Anime(
     val releaseYear: String = "",
     val categoryId: Int? = null,
     val categoryName: String? = null,
-    val episodeCount: Int = 0
+    val episodeCount: Int = 0,
+    val isRestricted: Boolean = false // only meaningful for cartoons
 )
 
 data class AnimeEpisode(

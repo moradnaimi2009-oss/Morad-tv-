@@ -112,7 +112,7 @@ private fun AppRoot(
     val currentRoute = backStack?.destination?.route
 
     val showChrome = currentRoute in setOf(
-        Routes.HOME, Routes.CHANNELS, Routes.MOVIES, Routes.ANIME, Routes.CARTOONS
+        Routes.HOME, Routes.CHANNELS, Routes.ANIME, Routes.CARTOONS
     )
 
     val youtubeIdRegex = remember {
@@ -161,7 +161,6 @@ private fun AppRoot(
                     val title = when (currentRoute) {
                         Routes.HOME -> settings.appName
                         Routes.CHANNELS -> "Live Channels"
-                        Routes.MOVIES -> "Movies"
                         Routes.ANIME -> "Anime"
                         Routes.CARTOONS -> "Cartoons"
                         else -> "Morad TV"
@@ -225,7 +224,6 @@ private fun AppRoot(
                         val items = buildList {
                             add(Triple(Routes.HOME, "Home", Icons.Filled.Home))
                             if (settings.enableChannels) add(Triple(Routes.CHANNELS, "Channels", Icons.Filled.LiveTv))
-                            if (settings.enableMovies) add(Triple(Routes.MOVIES, "Movies", Icons.Filled.Movie))
                             if (settings.enableAnime) add(Triple(Routes.ANIME, "Anime", Icons.Filled.PlayArrow))
                             add(Triple(Routes.CARTOONS, "Cartoons", Icons.Filled.ChildCare))
                         }

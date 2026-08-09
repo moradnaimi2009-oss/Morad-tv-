@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChildCare
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -48,6 +49,7 @@ import com.lite.streamvault.viewmodel.CartoonsViewModel
 @Composable
 fun CartoonsScreen(
     onCartoonClick: (Anime) -> Unit,
+    onLockedClick: () -> Unit,
     viewModel: CartoonsViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
@@ -66,14 +68,17 @@ fun CartoonsScreen(
             items(9) { CartoonTileShimmer() }
         } else {
             items(state.anime) { cartoon ->
-                CartoonTile(cartoon) { onCartoonClick(cartoon) }
+                val locked = cartoon.isRestricted && !state.unlockedRestricted
+                CartoonTile(cartoon, locked) {
+                    if (locked) onLockedClick() else onCartoonClick(cartoon)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun CartoonTile(cartoon: Anime, onClick: () -> Unit) {
+private fun CartoonTile(cartoon: Anime, locked: Boolean, onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -91,7 +96,9 @@ private fun CartoonTile(cartoon: Anime, onClick: () -> Unit) {
                     model = cartoon.posterUrl,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .then(if (locked) Modifier.background(Color.Black.copy(alpha = 0.65f)) else Modifier)
                 )
             } else {
                 Box(
@@ -112,7 +119,21 @@ private fun CartoonTile(cartoon: Anime, onClick: () -> Unit) {
                     )
                 }
             }
-            if (cartoon.episodeCount > 0) {
+            if (locked) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.45f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Lock,
+                        contentDescription = "Locked — invite 5 friends to unlock",
+                        tint = Color.White,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+            } else if (cartoon.episodeCount > 0) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
@@ -131,7 +152,7 @@ private fun CartoonTile(cartoon: Anime, onClick: () -> Unit) {
         }
         Text(
             text = cartoon.title,
-            color = Color.White,
+            color = if (locked) Color.White.copy(alpha = 0.5f) else Color.White,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium,
             maxLines = 1,

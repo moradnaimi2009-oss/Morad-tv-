@@ -12,7 +12,8 @@ import javax.inject.Inject
 
 data class AnimeUiState(
     val isLoading: Boolean = true,
-    val anime: List<Anime> = emptyList()
+    val anime: List<Anime> = emptyList(),
+    val unlockedRestricted: Boolean = true
 )
 
 @HiltViewModel
