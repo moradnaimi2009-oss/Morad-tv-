@@ -56,8 +56,12 @@ fun NavGraph(
         composable(Routes.HOME) {
             HomeScreen(
                 settings = settings,
-                onMovieClick = { movie -> navController.navigate(Routes.movieDetail(movie.id)) },
-                onAnimeClick = { anime -> navController.navigate(Routes.animeDetail(anime.id)) }
+                onChannelClick = { ch -> onPlayWithInterstitial(ch.streamUrl, ch.name, true) },
+                onAnimeClick = { anime -> navController.navigate(Routes.animeDetail(anime.id)) },
+                onCartoonClick = { cartoon -> navController.navigate(Routes.cartoonDetail(cartoon.id)) },
+                onSeeAllChannels = { navController.navigate(Routes.CHANNELS) },
+                onSeeAllAnime = { navController.navigate(Routes.ANIME) },
+                onSeeAllCartoons = { navController.navigate(Routes.CARTOONS) }
             )
         }
 

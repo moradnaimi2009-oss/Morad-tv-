@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.lite.streamvault.data.repository.StreamVaultRepository
 import com.lite.streamvault.domain.model.Anime
 import com.lite.streamvault.domain.model.AppSettings
-import com.lite.streamvault.domain.model.Movie
+import com.lite.streamvault.domain.model.Channel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,8 +14,9 @@ import javax.inject.Inject
 
 data class HomeUiState(
     val isLoading: Boolean = true,
-    val movies: List<Movie> = emptyList(),
+    val channels: List<Channel> = emptyList(),
     val anime: List<Anime> = emptyList(),
+    val cartoons: List<Anime> = emptyList(),
     val settings: AppSettings = AppSettings()
 )
 
@@ -30,12 +31,14 @@ class HomeViewModel @Inject constructor(
     fun load(settings: AppSettings) {
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, settings = settings)
-            val movies = if (settings.enableMovies) repository.getMovies() else emptyList()
+            val channels = if (settings.enableChannels) repository.getChannels() else emptyList()
             val anime = if (settings.enableAnime) repository.getAnime() else emptyList()
+            val cartoons = repository.getCartoons()
             _state.value = HomeUiState(
                 isLoading = false,
-                movies = movies,
+                channels = channels,
                 anime = anime,
+                cartoons = cartoons,
                 settings = settings
             )
         }
