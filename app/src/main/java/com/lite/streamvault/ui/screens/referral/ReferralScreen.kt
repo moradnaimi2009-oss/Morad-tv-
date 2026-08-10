@@ -131,12 +131,12 @@ fun ReferralScreen(
         Spacer(Modifier.height(4.dp))
         Text(
             text = when {
-                state.unlocked -> "🎉 مبروك! فتحتِ الحلقات الحصرية بقسم الكرتون"
+                state.unlocked -> "🎉 مبروك! تم فتح الحلقات الحصرية بقسم الكرتون"
                 state.referralCount == 0 -> "ابدأ بدعوة أول صديق!"
-                state.referralCount < 3 -> "🎉 بداية موفقة! كملي كذا"
-                state.referralCount < 6 -> "👏 أنتِ بالطريق الصحيح"
+                state.referralCount < 3 -> "🎉 بداية موفقة! أكمل كذا"
+                state.referralCount < 6 -> "👏 استمر بنفس الطريقة"
                 state.referralCount < state.goal -> "🔥 قريبة جداً! باقي ${state.goal - state.referralCount} بس"
-                else -> "ادعِ ${state.goal - state.referralCount} صديق كمان لفتح الحلقات الحصرية بقسم الكرتون"
+                else -> "ادعُ ${state.goal - state.referralCount} صديق كمان لفتح الحلقات الحصرية بقسم الكرتون"
             },
             color = if (state.unlocked) Blue500 else Color.White.copy(alpha = 0.7f),
             style = MaterialTheme.typography.bodySmall
@@ -153,7 +153,7 @@ fun ReferralScreen(
         OutlinedTextField(
             value = state.redeemInput,
             onValueChange = viewModel::onRedeemInputChange,
-            placeholder = { Text("اكتبي الكود هنا") },
+            placeholder = { Text("اكتب الكود هنا") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )

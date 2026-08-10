@@ -70,7 +70,7 @@ class ReferralViewModel @Inject constructor(
                 message == "self_referral" -> "ما تقدر تستخدم كودك أنت"
                 message == "already_used" -> "تم استخدام كود دعوة من قبل، لا يمكن التكرار"
                 message == "invalid_code" -> "الكود غير صحيح"
-                else -> "صار خطأ، جرّبي مرة ثانية"
+                else -> "صار خطأ، حاول مرة ثانية"
             }
             _state.value = _state.value.copy(
                 isRedeeming = false,

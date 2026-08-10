@@ -78,7 +78,7 @@ fun MyListScreen(
         if (isEmpty) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
-                    text = "ما أضفتِ شي لقائمتك بعد.\nاضغطي على أيقونة القلب ❤️ بأي فيلم/أنمي/كرتون.",
+                    text = "لم تُضف أي شيء لقائمتك بعد.\nاضغط على أيقونة القلب ❤️ بأي فيلم/أنمي/كرتون.",
                     color = Color.White.copy(alpha = 0.6f),
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
