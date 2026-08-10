@@ -97,7 +97,7 @@ fun ReferralScreen(
                             type = "text/plain"
                             putExtra(
                                 Intent.EXTRA_TEXT,
-                                "جرب تطبيق Morad TV! استخدم كود الدعوة: ${state.myCode}"
+                                "جرب تطبيق Morad TV! استخدم كود الدعوة: ${state.myCode}\nحمّل التطبيق: https://moradtv.lovestoblog.com/?i=${state.myCode}"
                             )
                         }
                         context.startActivity(Intent.createChooser(shareIntent, "شارك كودك"))
