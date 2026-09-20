@@ -1,0 +1,292 @@
+package com.lite.streamvault
+
+import android.Manifest
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChildCare
+import androidx.compose.material.icons.filled.CardGiftcard
+import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LiveTv
+import androidx.compose.material.icons.filled.Movie
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import com.lite.streamvault.ads.AdManager
+import com.lite.streamvault.domain.model.AppSettings
+import com.lite.streamvault.ui.components.BannerAdView
+import com.lite.streamvault.ui.components.AppLovinBannerView
+import com.lite.streamvault.ui.components.StartAppBannerView
+import com.lite.streamvault.ui.components.UnityBannerAdView
+import com.lite.streamvault.ui.navigation.NavGraph
+import com.lite.streamvault.ui.navigation.Routes
+import com.lite.streamvault.ui.theme.Blue400
+import com.lite.streamvault.ui.theme.Blue500
+import com.lite.streamvault.ui.theme.DarkBg
+import com.lite.streamvault.ui.theme.DarkCard
+import com.lite.streamvault.ui.theme.MoradTvTheme
+import com.lite.streamvault.ui.theme.TextMuted
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+
+@AndroidEntryPoint
+class MainActivity : ComponentActivity() {
+
+    @Inject lateinit var adManager: AdManager
+
+    private val notificationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+        setContent {
+            MoradTvTheme {
+                AppRoot(
+                    adManager = adManager,
+                    activity = this
+                )
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // App just came back to the foreground (whether from Home, another app, or
+        // the lock screen) — make sure the interstitial/rewarded ad is ready again.
+        if (::adManager.isInitialized) {
+            adManager.onAppResumed()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        adManager.destroy()
+    }
+}
+
+@Composable
+private fun AppRoot(
+    adManager: AdManager,
+    activity: ComponentActivity
+) {
+    val navController = rememberNavController()
+    var settings by remember { mutableStateOf(AppSettings()) }
+
+    val backStack by navController.currentBackStackEntryAsState()
+    val currentRoute = backStack?.destination?.route
+
+    // "خروج مع إعلان": لما المستخدم يضغط رجوع وهو بأصل الصفحات (ما فيه شي قبله
+    // بالـ back stack)، يعني بيطلع من التطبيق فعليًا — نعرض إعلان بيني (لو جاهز)
+    // قبل الإغلاق الفعلي، بدل ما يطلع بدون أي إعلان.
+    val isAtAppRoot = navController.previousBackStackEntry == null
+    BackHandler(enabled = isAtAppRoot) {
+        adManager.showInterstitial(activity) {
+            activity.finish()
+        }
+    }
+
+    val showChrome = currentRoute in setOf(
+        Routes.HOME, Routes.MOVIES, Routes.CHANNELS, Routes.ANIME, Routes.CARTOONS
+    )
+
+    val youtubeIdRegex = remember {
+        Regex("(?:youtu\\.be/|youtube\\.com/(?:watch\\?v=|live/|embed/|shorts/))([a-zA-Z0-9_-]{6,})")
+    }
+
+    fun playWithInterstitial(videoUrl: String, title: String, isLive: Boolean) {
+        val youtubeId = youtubeIdRegex.find(videoUrl)?.groupValues?.get(1)
+        adManager.showInterstitial(activity) {
+            if (youtubeId != null) {
+                // Open the official YouTube app (or browser fallback) instead of an in-app
+                // WebView. This avoids embedding restrictions/origin errors entirely, since
+                // it's genuinely the YouTube app playing the video, not a third-party embed.
+                try {
+                    val appIntent = Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse("vnd.youtube:$youtubeId")
+                    ).apply { setPackage("com.google.android.youtube") }
+                    activity.startActivity(appIntent)
+                } catch (e: ActivityNotFoundException) {
+                    val webIntent = Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse("https://www.youtube.com/watch?v=$youtubeId")
+                    )
+                    activity.startActivity(webIntent)
+                }
+            } else {
+                // Real HLS/direct stream URLs play natively and reliably in the built-in
+                // ExoPlayer screen — no external app chooser needed.
+                navController.navigate(Routes.player(videoUrl, title, isLive))
+            }
+        }
+    }
+
+    Scaffold(
+        containerColor = DarkBg,
+        topBar = {
+            if (showChrome) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .padding(horizontal = 16.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val title = when (currentRoute) {
+                        Routes.HOME -> settings.appName
+                        Routes.CHANNELS -> "Live Channels"
+                        Routes.ANIME -> "Anime"
+                        Routes.CARTOONS -> "Cartoons"
+                        else -> "Morad TV"
+                    }
+                    Text(
+                        text = title,
+                        color = Blue400,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(onClick = { navController.navigate(Routes.MY_LIST) }) {
+                        Icon(Icons.Filled.Favorite, contentDescription = "My List", tint = Color.White, modifier = Modifier.size(22.dp))
+                    }
+                    val context = LocalContext.current
+                    IconButton(onClick = {
+                        val intent = Intent(
+                            Intent.ACTION_VIEW,
+                            Uri.parse("https://whatsapp.com/channel/0029Vb8CSTkFXUuV0xm4Et3m")
+                        )
+                        context.startActivity(intent)
+                    }) {
+                        Icon(Icons.Filled.Chat, contentDescription = "Contact us on WhatsApp", tint = Color.White, modifier = Modifier.size(22.dp))
+                    }
+                    IconButton(onClick = { navController.navigate(Routes.REFERRAL) }) {
+                        Icon(Icons.Filled.CardGiftcard, contentDescription = "Invite Friends", tint = Color.White, modifier = Modifier.size(24.dp))
+                    }
+                    IconButton(onClick = { navController.navigate(Routes.SEARCH) }) {
+                        Icon(Icons.Filled.Search, contentDescription = "Search", tint = Color.White, modifier = Modifier.size(26.dp))
+                    }
+                }
+            }
+        },
+        bottomBar = {
+            if (showChrome) {
+                Column {
+                    val activeCampaign by adManager.activeCampaign.collectAsState()
+                    when (activeCampaign?.network?.lowercase()) {
+                        "admob" -> if (!activeCampaign?.bannerId.isNullOrBlank()) {
+                            BannerAdView(
+                                adUnitId = activeCampaign!!.bannerId!!,
+                                showAds = settings.showAds
+                            )
+                        }
+                        "startapp" -> if (settings.showAds) {
+                            StartAppBannerView(activity = activity)
+                        }
+                        "applovin" -> if (settings.showAds && !activeCampaign?.bannerId.isNullOrBlank()) {
+                            AppLovinBannerView(activity = activity, adUnitId = activeCampaign!!.bannerId!!)
+                        }
+                        "unity" -> if (settings.showAds && !activeCampaign?.bannerId.isNullOrBlank()) {
+                            UnityBannerAdView(activity = activity, placementId = activeCampaign!!.bannerId!!)
+                        }
+                        else -> {}
+                    }
+                    NavigationBar(
+                        containerColor = DarkCard,
+                        tonalElevation = 0.dp,
+                        modifier = Modifier.clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+                    ) {
+                        val items = buildList {
+                            add(Triple(Routes.HOME, "Home", Icons.Filled.Home))
+                            if (settings.enableMovies) add(Triple(Routes.MOVIES, "Movies", Icons.Filled.Movie))
+                            if (settings.enableChannels) add(Triple(Routes.CHANNELS, "Channels", Icons.Filled.LiveTv))
+                            if (settings.enableAnime) add(Triple(Routes.ANIME, "Anime", Icons.Filled.PlayArrow))
+                            add(Triple(Routes.CARTOONS, "Cartoons", Icons.Filled.ChildCare))
+                        }
+                        items.forEach { (route, label, icon) ->
+                            val selected = currentRoute == route
+                            NavigationBarItem(
+                                selected = selected,
+                                onClick = {
+                                    navController.navigate(route) {
+                                        popUpTo(Routes.HOME) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                },
+                                icon = { Icon(icon, contentDescription = label) },
+                                label = { Text(label) },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = Blue400,
+                                    selectedTextColor = Blue400,
+                                    unselectedIconColor = TextMuted,
+                                    unselectedTextColor = TextMuted,
+                                    indicatorColor = Blue500.copy(alpha = 0.15f)
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    ) { padding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(DarkBg)
+                .padding(padding)
+        ) {
+            NavGraph(
+                navController = navController,
+                settings = settings,
+                onSettingsReady = { settings = it },
+                onPlayWithInterstitial = ::playWithInterstitial
+            )
+        }
+    }
+}

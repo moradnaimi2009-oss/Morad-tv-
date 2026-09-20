@@ -1,0 +1,111 @@
+package com.lite.streamvault.viewmodel
+
+import android.app.Activity
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.lite.streamvault.ads.AdManager
+import com.lite.streamvault.data.repository.StreamVaultRepository
+import com.lite.streamvault.domain.model.LeaderboardEntry
+import com.lite.streamvault.util.DeviceIdProvider
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+data class ReferralUiState(
+    val isLoading: Boolean = true,
+    val myCode: String = "",
+    val referralCount: Int = 0,
+    val unlocked: Boolean = false,
+    val goal: Int = 10,
+    val adsRemovedLifetime: Boolean = false,
+    val adsRemovalGoal: Int = 100,
+    val redeemInput: String = "",
+    val redeemMessage: String? = null,
+    val redeemSuccess: Boolean? = null,
+    val isRedeeming: Boolean = false,
+    val leaderboard: List<LeaderboardEntry> = emptyList(),
+    val rewardMessage: String? = null
+)
+
+@HiltViewModel
+class ReferralViewModel @Inject constructor(
+    private val repository: StreamVaultRepository,
+    private val deviceIdProvider: DeviceIdProvider,
+    private val adManager: AdManager
+) : ViewModel() {
+
+    private val _state = MutableStateFlow(ReferralUiState(myCode = deviceIdProvider.referralCode))
+    val state: StateFlow<ReferralUiState> = _state
+
+    // Purely opt-in extra revenue: only fires when the user taps "دعم التطبيق" —
+    // never shown automatically, so it never interrupts anyone.
+    fun watchSupportAd(activity: Activity) {
+        adManager.showRewarded(
+            activity = activity,
+            onReward = {
+                _state.value = _state.value.copy(rewardMessage = "شكرًا لدعمك التطبيق! 🎁")
+            },
+            onClosed = {
+                if (_state.value.rewardMessage == null) {
+                    _state.value = _state.value.copy(rewardMessage = "ما فيه إعلان متاح حاليًا، حاول بعد شوي")
+                }
+            }
+        )
+    }
+
+    fun dismissRewardMessage() {
+        _state.value = _state.value.copy(rewardMessage = null)
+    }
+
+    fun load() {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true)
+            repository.ensureReferralCode(deviceIdProvider.deviceId, deviceIdProvider.referralCode)
+            val status = repository.getReferralStatus(deviceIdProvider.deviceId)
+            val top = repository.getTopReferrers()
+            _state.value = _state.value.copy(
+                isLoading = false,
+                referralCount = status.referralCount,
+                unlocked = status.unlockedRestricted,
+                goal = status.goal,
+                adsRemovedLifetime = status.adsRemovedLifetime,
+                adsRemovalGoal = status.adsRemovalGoal,
+                leaderboard = top
+            )
+        }
+    }
+
+    fun onRedeemInputChange(value: String) {
+        _state.value = _state.value.copy(redeemInput = value, redeemMessage = null, redeemSuccess = null)
+    }
+
+    fun redeem() {
+        val code = _state.value.redeemInput.trim().uppercase()
+        if (code.isBlank() || code == deviceIdProvider.referralCode) {
+            _state.value = _state.value.copy(
+                redeemMessage = if (code.isBlank()) null else "ما تقدر تستخدم كودك أنت",
+                redeemSuccess = false
+            )
+            return
+        }
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isRedeeming = true)
+            val (success, message) = repository.redeemReferral(code, deviceIdProvider.deviceId)
+            val friendly = when {
+                success -> "تم بنجاح! 🎉"
+                message == "self_referral" -> "ما تقدر تستخدم كودك أنت"
+                message == "already_used" -> "تم استخدام كود دعوة من قبل، لا يمكن التكرار"
+                message == "invalid_code" -> "الكود غير صحيح"
+                else -> "صار خطأ، حاول مرة ثانية"
+            }
+            _state.value = _state.value.copy(
+                isRedeeming = false,
+                redeemMessage = friendly,
+                redeemSuccess = success,
+                redeemInput = if (success) "" else _state.value.redeemInput
+            )
+        }
+    }
+}
