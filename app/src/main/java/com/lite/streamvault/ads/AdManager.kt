@@ -55,7 +55,8 @@ class AdManager @Inject constructor() {
             network = chosen.network,
             appId = chosen.appId,
             bannerId = chosen.bannerId,
-            interstitialId = chosen.interstitialId
+            interstitialId = chosen.interstitialId,
+            rewardedId = chosen.rewardedId
         )
         platform = when (chosen.network.lowercase()) {
             AdConfig.ADMOB -> AdMobPlatform(config)

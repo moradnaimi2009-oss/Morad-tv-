@@ -3,6 +3,7 @@ package com.lite.streamvault.viewmodel
 import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.lite.streamvault.BuildConfig
 import com.lite.streamvault.ads.AdManager
 import com.lite.streamvault.data.repository.StreamVaultRepository
 import com.lite.streamvault.domain.model.AppSettings
@@ -69,7 +70,7 @@ class SplashViewModel @Inject constructor(
                 // Update check.
                 if (settings.updateEnabled &&
                     settings.updateVersion.isNotBlank() &&
-                    isUpdateAvailable(settings.appVersion, settings.updateVersion)
+                    isUpdateAvailable(BuildConfig.VERSION_NAME, settings.updateVersion)
                 ) {
                     _state.value = SplashState.UpdateAvailable(
                         message = settings.updateMessage,

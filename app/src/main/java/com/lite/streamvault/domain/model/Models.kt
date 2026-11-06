@@ -92,6 +92,7 @@ data class AdCampaign(
     val isActive: Boolean,
     val bannerId: String? = null,
     val interstitialId: String? = null,
+    val rewardedId: String? = null,
     val appId: String? = null,
     val priority: Int = 0
 )

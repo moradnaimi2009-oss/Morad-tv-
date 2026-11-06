@@ -12,6 +12,7 @@ import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
+import com.lite.streamvault.BuildConfig
 import com.lite.streamvault.util.Constants
 
 class AdMobPlatform(private val config: AdConfig) : AdPlatform {
@@ -29,7 +30,10 @@ class AdMobPlatform(private val config: AdConfig) : AdPlatform {
 
     override fun loadInterstitial() {
         val ctx = context ?: return
-        val id = config.interstitialId?.takeIf { it.isNotBlank() } ?: Constants.ADMOB_INTERSTITIAL_ID
+        // Google's sample IDs only in debug: in release they'd serve test ads that earn nothing.
+        val id = config.interstitialId?.takeIf { it.isNotBlank() }
+            ?: Constants.ADMOB_INTERSTITIAL_ID.takeIf { BuildConfig.DEBUG }
+            ?: return
         val req = AdRequest.Builder().build()
         InterstitialAd.load(
             ctx,
@@ -71,10 +75,13 @@ class AdMobPlatform(private val config: AdConfig) : AdPlatform {
 
     override fun loadRewarded() {
         val ctx = context ?: return
+        val id = config.rewardedId?.takeIf { it.isNotBlank() }
+            ?: Constants.ADMOB_REWARDED_ID.takeIf { BuildConfig.DEBUG }
+            ?: return
         val req = AdRequest.Builder().build()
         RewardedAd.load(
             ctx,
-            Constants.ADMOB_REWARDED_ID,
+            id,
             req,
             object : RewardedAdLoadCallback() {
                 override fun onAdLoaded(ad: RewardedAd) { rewarded = ad }

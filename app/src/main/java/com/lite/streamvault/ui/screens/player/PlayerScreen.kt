@@ -18,6 +18,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.FiberManualRecord
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -148,6 +150,7 @@ private fun ExoStreamPlayer(videoUrl: String, isLive: Boolean) {
 
     // Starts true so the spinner is visible immediately, before the first player callback fires.
     var isBuffering by remember { mutableStateOf(true) }
+    var hasError by remember { mutableStateOf(false) }
 
     val exoPlayer = remember {
         ExoPlayer.Builder(context).build().apply {
@@ -182,7 +185,14 @@ private fun ExoStreamPlayer(videoUrl: String, isLive: Boolean) {
             }
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
-                if (isPlaying) isBuffering = false
+                if (isPlaying) { isBuffering = false; hasError = false }
+            }
+
+            // Dead stream / network drop: show a message with a retry button instead of
+            // leaving a black screen.
+            override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                isBuffering = false
+                hasError = true
             }
         }
         exoPlayer.addListener(listener)
@@ -192,13 +202,18 @@ private fun ExoStreamPlayer(videoUrl: String, isLive: Boolean) {
     // Pause playback (picture AND sound) as soon as the app is backgrounded, and resume it when
     // the user comes back — otherwise ExoPlayer keeps decoding/playing audio behind the app.
     DisposableEffect(lifecycleOwner, exoPlayer) {
+        // Remember whether it was actually playing, so coming back doesn't force-play a
+        // video the user had paused on purpose.
+        var wasPlaying = true
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP -> {
+                    if (exoPlayer.playWhenReady) wasPlaying = true
+                    else if (event == Lifecycle.Event.ON_PAUSE) wasPlaying = false
                     exoPlayer.playWhenReady = false
                 }
                 Lifecycle.Event.ON_RESUME -> {
-                    exoPlayer.playWhenReady = true
+                    exoPlayer.playWhenReady = wasPlaying
                 }
                 else -> Unit
             }
@@ -217,11 +232,28 @@ private fun ExoStreamPlayer(videoUrl: String, isLive: Boolean) {
                 }
             }
         )
-        if (isBuffering) {
+        if (isBuffering && !hasError) {
             CircularProgressIndicator(
                 modifier = Modifier.align(Alignment.Center),
                 color = Color.White
             )
+        }
+        if (hasError) {
+            Column(
+                modifier = Modifier.align(Alignment.Center),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("تعذر تشغيل الفيديو، تأكد من الإنترنت", color = Color.White)
+                Button(
+                    onClick = {
+                        hasError = false
+                        isBuffering = true
+                        exoPlayer.prepare()
+                        exoPlayer.playWhenReady = true
+                    },
+                    modifier = Modifier.padding(top = 12.dp)
+                ) { Text("إعادة المحاولة") }
+            }
         }
     }
 }

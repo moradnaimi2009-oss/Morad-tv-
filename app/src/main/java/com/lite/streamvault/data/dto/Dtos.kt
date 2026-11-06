@@ -93,6 +93,7 @@ data class AdCampaignDto(
     @SerializedName("is_active") val isActive: Boolean = false,
     @SerializedName("banner_id") val bannerId: String? = null,
     @SerializedName("interstitial_id") val interstitialId: String? = null,
+    @SerializedName("rewarded_id") val rewardedId: String? = null,
     @SerializedName("app_id") val appId: String? = null,
     @SerializedName("priority") val priority: Int = 0
 )

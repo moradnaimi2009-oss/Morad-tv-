@@ -4,7 +4,8 @@ data class AdConfig(
     val network: String,
     val appId: String?,
     val bannerId: String?,
-    val interstitialId: String?
+    val interstitialId: String?,
+    val rewardedId: String? = null
 ) {
     companion object {
         const val ADMOB = "admob"

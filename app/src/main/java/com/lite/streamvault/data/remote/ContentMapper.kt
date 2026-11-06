@@ -121,6 +121,7 @@ object ContentMapper {
         isActive = isActive,
         bannerId = bannerId,
         interstitialId = interstitialId,
+        rewardedId = rewardedId,
         appId = appId,
         priority = priority
     )
